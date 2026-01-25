@@ -1,6 +1,6 @@
 
-export async function checkLogin(username: string, password: string){
-    if(username === "admin" && password === "123"){
+export async function checkLogin(email: string, password: string){
+    if(email === "admin@email.com" && password === "123"){
         return { success: true};
     }
     return { success: false};

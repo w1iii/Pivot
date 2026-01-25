@@ -3,13 +3,13 @@ import {checkLogin} from './authController';
 
 export async function POST(req: NextRequest){
     const body = await req.json();
-    const {username, password} = body;
+    const {email, password} = body;
 
-    const result = await checkLogin(username,password)
+    const result = await checkLogin(email,password)
 
     if(result.success){
         const response = NextResponse.json({ message: "Logged in"})
-        response.cookies.set('user', username, { httpOnly: true} );
+        response.cookies.set('user', email, { httpOnly: true} );
         return response;
     }
 
