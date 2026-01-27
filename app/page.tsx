@@ -25,8 +25,8 @@ export default function Home() {
       // const data = await res.json()
     }else{
       const data = await res.json()
-      setError(data.message)
       console.error(data.message)
+      setError(data.message)
     }
   }
   return (
