@@ -11,43 +11,39 @@ export async function POST(req: NextRequest, res: NextResponse){
         return NextResponse.json({ error: "Please enter username, password, and email", status: 400 });
       }
 
-    const user = {
-        firstname: firstname,
-        lastname: lastname,
-        address: address,
-        email: email,
-        contactno: contactno,
-        password: password,
+    // check email if duplicate
+    try{
+      const checkDupQuery = `
+        SELECT id FROM users WHERE email = $1 
+      `;
+
+      const existingEmail = await pool.query(checkDupQuery, [email]);
+      if (existingEmail.rows.length > 0) {
+         return NextResponse.json({ error: "Email already registered", status: 409 });
+       }
+    }catch(e: any){
+      return NextResponse.json({ message: 'query error', error: e.message})
     }
-
-    const checkDupQuery = `
-       SELECT id FROM users WHERE email = ${email} 
-    `;
-
-    // const existingEmail = pool.query(checkDupQuery);
-    // if (existingEmail.rows.length()> 1) {
-    //   return NextResponse.json({ error: "Email already registered", statud: 409 });
-    // }
+    
 
     const password_hash = await bcrypt.hash(password, 10);
 
+    // add user to database
     try{
       const addQuery = `
-            INSERT INTO users(firstname, lastname, address, email, contactno, password, created_at)
-            VALUES ($1, $2, $3, $4, $5, $6, $7)
-            RETURNING id, email, first_name, last_name;
+            INSERT INTO users(firstname, lastname, address, email, contactno, password_hash)
+            VALUES ($1, $2, $3, $4, $5, $6 )
+            RETURNING id, email, firstname, lastname;
           `;
 
-      const newuser = pool.query(addQuery, [firstname, lastname, address, email, contactno, password])
+      const newuser = await pool.query(addQuery, [firstname, lastname, address, email, contactno, password_hash])
           
-      NextResponse.json({ 
+      return NextResponse.json({ 
         message: 'User added successfully,',
         user: newuser.rows[0]
     })
-    }catch(e){
-      console.log(e)
-      NextResponse.json({ message: 'Insert user error', e})
-
+    }catch(e: any){
+      return NextResponse.json({ message: 'Insert user error', error: e.message})
   }
 }
 

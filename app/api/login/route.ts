@@ -1,6 +1,7 @@
 import {NextRequest, NextResponse} from "next/server";
 import {checkLogin} from './authController';
 
+
 export async function POST(req: NextRequest){
     const body = await req.json();
     const {email, password} = body;
