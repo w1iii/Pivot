@@ -1,0 +1,59 @@
+.login-container{
+    display:flex;
+    width:100%;
+    gap:3.5rem;
+    align-items:center;
+    height:100vh;
+    justify-content:center;
+}
+.left-section{
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    width:42rem;
+}
+
+.left-section h1{
+    font-size:150px;
+    text-align:center;
+    margin-bottom:0;
+    margin-top:0;
+    padding:0;
+}
+
+.left-section p{
+    text-align:right;
+    font-size:24px;
+}
+.right-section{
+    width:20rem;
+}
+
+.login-modal{
+    display:flex;
+    flex-direction:column;
+    background-color:#263C52;
+    padding:2rem;
+    text-align: center;
+    border-radius:1rem;
+    color:white;
+}
+
+.login-modal form{
+    display:flex;
+    flex-direction:column;
+}
+
+.login-modal form input{
+    margin:0.5rem;
+    height:1.5rem;
+}
+.login-modal form button{
+    height: 2rem;
+    width:100%;
+}
+
+#invalid-credentials{
+    color:#FF7E80;
+    margin:0;
+}
