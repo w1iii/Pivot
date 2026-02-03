@@ -50,7 +50,12 @@
 }
 .login-modal form button{
     height: 2rem;
-    width:100%;
+    width: 15rem;
+    margin-top:0.25rem;
+    margin-left:0.5rem;
+
+    border-style:none;
+    border-radius:0.5rem;
 }
 
 #invalid-credentials{
