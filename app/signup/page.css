@@ -1,0 +1,132 @@
+.signup-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.signup-form-wrapper {
+  background-color: #3d5a6b;
+  padding: 50px 60px;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 750px;
+  border: 2px solid #5c8aa6;
+}
+
+.error-message {
+  color: #ff6b6b;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.success-message {
+  color: #51cf66;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.form-row {
+  display: flex;
+  gap: 40px;
+  margin-bottom: 30px;
+}
+
+.form-field {
+  flex: 1;
+}
+
+.form-field-full {
+  margin-bottom: 30px;
+}
+
+.form-field label,
+.form-field-full label {
+  display: block;
+  color: #e8e8e8;
+  margin-bottom: 8px;
+  text-align: center;
+  font-size: 14px;
+}
+
+.form-field input,
+.form-field-full input {
+  width: 100%;
+  padding: 14px;
+  border: none;
+  border-radius: 8px;
+  background-color: #d1d5db;
+  font-size: 14px;
+  outline: none;
+}
+
+.contact-field-wrapper {
+  margin-bottom: 30px;
+  display: flex;
+  justify-content: center;
+}
+
+.contact-field {
+  width: 55%;
+}
+
+.contact-field label {
+  display: block;
+  color: #e8e8e8;
+  margin-bottom: 8px;
+  text-align: center;
+  font-size: 14px;
+}
+
+.contact-field input {
+  width: 100%;
+  padding: 14px;
+  border: none;
+  border-radius: 8px;
+  background-color: #d1d5db;
+  font-size: 14px;
+  outline: none;
+}
+
+.submit-wrapper {
+  display: flex;
+  justify-content: center;
+}
+
+.submit-wrapper button {
+  background-color: #2a4455;
+  color: #ffffff;
+  padding: 14px 60px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  letter-spacing: 1px;
+}
+
+.submit-wrapper button.loading {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.submit-wrapper button:hover:not(.loading) {
+  background-color: #1f3340;
+}
+
+.login-navigation{
+    text-align:center;
+    color:white;
+}
+
+#login-link{
+    color:white;
+    font-weight:bold;
+    transition:0.2s
+}
+
+#login-link:hover {
+    color:#C1BEF8;
+    transition:0.1s;
+}

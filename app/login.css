@@ -47,8 +47,10 @@
 .login-modal form input{
     margin:0.5rem;
     height:1.5rem;
+    font-size:14px;
 }
 .login-modal form button{
+    font-size:14px;
     height: 2rem;
     width: 15rem;
     margin-top:0.25rem;
@@ -56,9 +58,25 @@
 
     border-style:none;
     border-radius:0.5rem;
+    background-color:#6D909F;
+    cursor:pointer;
+    transition:0.2s;
+    color:white;
 }
+
+.login-modal form button:hover{
+    scale:1.05;
+    transition:0.2s;
+
+}
+
 
 #invalid-credentials{
     color:#FF7E80;
     margin:0;
+}
+
+#create-account{
+    margin-top:1rem;
+    color:white;
 }

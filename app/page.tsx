@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link';
 import './login.css'
 
 export default function Home() {
@@ -46,7 +47,7 @@ export default function Home() {
               <input type="password" name="password"  value={password} placeholder="password" onChange={(e) => setPassword(e.target.value)}/>
               <button type="submit"> submit </button>
             </form>
-            <p> Create account </p>
+            <Link href="/signup" id="create-account"> Create account </Link>
           </div>
         </div>
       </div>
