@@ -30,6 +30,7 @@ export async function POST(request: NextRequest) {
 
     // Generate JWT token
     const token = await generateToken(user);
+    console.log(token)
 
     // Set cookie
     await setAuthCookie(token);
@@ -37,6 +38,7 @@ export async function POST(request: NextRequest) {
     // Return user data (without sensitive info)
     return NextResponse.json({
       success: true,
+      token: token,
       user: {
         id: user.id,
         email: user.email,

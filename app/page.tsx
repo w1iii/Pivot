@@ -4,8 +4,10 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link';
 import './login.css'
+import { useAuth } from './contexts/AuthContext'
 
 export default function Home() {
+  const { login } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -15,21 +17,28 @@ export default function Home() {
   const handleSubmit = async(e: React.FormEvent<HTMLFormElement>) =>{
     e.preventDefault()
 
-    const res = await fetch('/api/login', {
-      method: "POST",
-      headers: { "Content-Type": "application/json", },
-      body: JSON.stringify({ email: email, password: password})
-    })
-
-    if(res.ok){
-      console.log("Login success")
+    try{ 
+      await login(email, password)
       router.push('/dashboard')
-      // const data = await res.json()
-    }else{
-      const data = await res.json()
-      console.error(data.message)
-      setError(data.message)
+    }catch(err: any){
+      setError(err.message)
     }
+
+    // const res = await fetch('/api/login', {
+    //   method: "POST",
+    //   headers: { "Content-Type": "application/json", },
+    //   body: JSON.stringify({ email: email, password: password})
+    // })
+    //
+    // if(res.ok){
+    //   console.log("Login success")
+    //   router.push('/dashboard')
+    //   // const data = await res.json()
+    // }else{
+    //   const data = await res.json()
+    //   console.error(data.message)
+    //   setError(data.message)
+    // }
   }
   return (
     <>

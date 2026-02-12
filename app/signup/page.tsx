@@ -3,8 +3,11 @@
 import { useState } from 'react'
 import Link from 'next/link';
 import './page.css'
+import { useAuth } from '../contexts/AuthContext'
 
 export default function SignUp(){
+  const { signup } = useAuth()
+
   const [firstname, setFirst] = useState('')
   const [lastname, setLast] = useState('')
   const [address, setAddress] = useState('')
@@ -28,52 +31,62 @@ const handleSubmit = async(e: React.FormEvent) => {
 
   setLoading(true)
 
-  try {
-    const res = await fetch('/api/signup', {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ 
-        firstname: firstname,
-        lastname: lastname,
-        address: address,
-        email: email,
-        contactno: contactno,
-        password: password
-      })
-    })
-
-    if(res.status === 400){
-      setError('Please fill up the form')
+  try{
+      await signup(firstname, lastname, address, email, contactno, password )
       setLoading(false)
-      return
-    }
-    
-    if(res.status === 409){
-      const data = await res.json()
-      setError(data.error)
-      setLoading(false)
-      return
-    }
-
-    const data = await res.json()
-
-    if(res.ok){
       setSuccess('Account created successfully!')
-      setFirst('')
-      setLast('')
-      setAddress('')
-      setEmail('')
-      setContact('')
-      setPassword('')
-      setConfirm('')
-    } else {
-      setError(data.message || 'Something went wrong')
+      
+    }catch(e:any){
+      setError(e.message)
+      setLoading(false)
     }
-  } catch(err) {
-    setError('Network error. Please try again.')
-  } finally {
-    setLoading(false)
-  }
+
+  // try {
+  //   const res = await fetch('/api/signup', {
+  //     method: "POST",
+  //     headers: { "Content-Type": "application/json" },
+  //     body: JSON.stringify({ 
+  //       firstname: firstname,
+  //       lastname: lastname,
+  //       address: address,
+  //       email: email,
+  //       contactno: contactno,
+  //       password: password
+  //     })
+  //   })
+  //
+  //   if(res.status === 400){
+  //     setError('Please fill up the form')
+  //     setLoading(false)
+  //     return
+  //   }
+  //   
+  //   if(res.status === 409){
+  //     const data = await res.json()
+  //     setError(data.error)
+  //     setLoading(false)
+  //     return
+  //   }
+  //
+  //   const data = await res.json()
+  //
+  //   if(res.ok){
+  //     setSuccess('Account created successfully!')
+  //     setFirst('')
+  //     setLast('')
+  //     setAddress('')
+  //     setEmail('')
+  //     setContact('')
+  //     setPassword('')
+  //     setConfirm('')
+  //   } else {
+  //     setError(data.message || 'Something went wrong')
+  //   }
+  // } catch(err) {
+  //   setError('Network error. Please try again.')
+  // } finally {
+  //   setLoading(false)
+  // }
 }
 
 
