@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useState } from 'react';
 import type { User } from '../lib/auth/jwt';
+import { useRouter } from 'next/navigation'
 
 interface AuthContextType {
   user: User | null;
@@ -25,6 +26,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const router = useRouter()
   // Fetch current user on mount
   useEffect(() => {
     refreshUser();
@@ -32,11 +34,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refreshUser = async () => {
     try {
-      const response = await fetch('/api/auth/me');
+      const response = await fetch('../api/me');
       if (response.ok) {
         const data = await response.json();
+        console.log(data.user)
         setUser(data.user);
+        router.push('/dashboard')
       } else {
+        console.log("no account found")
         setUser(null);
       }
     } catch (error) {

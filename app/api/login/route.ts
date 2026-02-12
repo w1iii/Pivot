@@ -17,8 +17,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // TODO: Replace this with your actual database query
-    // This is a mock implementation - DO NOT use in production
     const user = await authenticateUser(email, password);
 
     if (!user) {
@@ -35,16 +33,24 @@ export async function POST(request: NextRequest) {
     // Set cookie
     await setAuthCookie(token);
 
-    // Return user data (without sensitive info)
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
-      token: token,
       user: {
         id: user.id,
         email: user.email,
-        name: user.name,
       },
-    });
+    })
+
+     response.cookies.set('token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/',   
+      });
+
+    return response
+
+
   } catch (error) {
     console.error('Login error:', error);
     return NextResponse.json(

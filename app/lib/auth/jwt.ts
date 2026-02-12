@@ -24,7 +24,7 @@ const getSecretKey = (): Uint8Array => {
   return new TextEncoder().encode(secret);
 };
 
-const TOKEN_NAME = 'auth-token';
+const TOKEN_NAME = 'token';
 const TOKEN_MAX_AGE = 7 * 24 * 60 * 60; // 7 days in seconds
 
 /**
