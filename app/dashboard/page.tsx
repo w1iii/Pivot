@@ -92,6 +92,13 @@ const StockDashboard: React.FC = () => {
     });
   };
 
+  const [showDropdown, setShow] = useState(false)
+
+  const handleIconClick = () => {
+    setShow(prev => !prev)
+
+  }
+
 
 
   return (
@@ -112,9 +119,21 @@ const StockDashboard: React.FC = () => {
               <Search className="search-icon" size={20} />
             </div>
           </div>
-          <button className="user-button">
-            <User size={24} />
-          </button>
+          <div className="dropdown-container">
+            <button className="user-button" onClick={handleIconClick}>
+              <User size={24} />
+            </button>
+
+          { showDropdown && 
+            <div className="user-dropdown"> 
+              <div className="dropdown-items">
+                <p>username</p>
+                <p>settings</p>
+                <p>logout</p>
+              </div>
+            </div>
+          }
+        </div>
         </div>
       </nav>
 
