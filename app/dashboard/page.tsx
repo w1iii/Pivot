@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, X, MessageCircle, User, TrendingUp, TrendingDown } from 'lucide-react';
 import './page.css';
 
@@ -33,41 +33,100 @@ const StockDashboard: React.FC = () => {
     { id: '3', symbol: 'GOOGL', price: 255.30, change: 2.55, changePercent: 2.55 },
     { id: '4', symbol: 'AMAZN', price: 255.30, change: 2.55, changePercent: 2.55 },
   ]);
+  
+  const [symbol, setSymbol] = useState('TSLA');
+  const [open, setOpen] = useState(0);
+  const [high, setHigh] = useState(0);
+  const [low, setLow] = useState(0);
+  const [volume, setVolume] = useState(0);
+  const [avgvolume, setAvg] = useState(0);
+  const [marketcap, setMarketcap] = useState(0);
+  const [price, setPrice] = useState(0);
+  const [change, setChange] = useState(0);
+  const [percent, setPercent] = useState(0);
+  const [error, setError] = useState('');
+
+  // Fetch stock data when symbol changes
+  useEffect(() => {
+    async function fetchStock() {
+      try {
+        const res = await fetch(`/api/stock?symbol=${symbol}`);
+
+        if (!res.ok) {
+          throw new Error('server error');
+        }
+
+        const data = await res.json();
+        console.log('Fetched data:', data);
+        
+        // Update state with fetched data
+        setOpen(parseFloat(data.open) || 0);
+        setHigh(parseFloat(data.high) || 0);
+        setLow(parseFloat(data.low) || 0);
+        setPrice(parseFloat(data.price) || 0);
+        setVolume(parseFloat(data.volume) || 0);
+        setChange(parseFloat(data.change) || 0);
+        setPercent(parseFloat(data.changePercent) || 0);
+        
+        // Update selected stock with real data
+        setSelectedStock(prev => ({
+          ...prev,
+          symbol: symbol,
+          price: parseFloat(data.price) || prev.price,
+          priceChange: parseFloat(data.change) || prev.priceChange,
+          changePercent: parseFloat(data.changePercent) || prev.changePercent,
+          statistics: {
+            'Open': parseFloat(data.open)?.toFixed(2) || '0.00',
+            'High': parseFloat(data.high)?.toFixed(2) || '0.00',
+            'Low': parseFloat(data.low)?.toFixed(2) || '0.00',
+            'Volume': data.volume ? `${(parseFloat(data.volume) / 1000000).toFixed(2)}M` : '0',
+            'Avg Volume': prev.statistics['Avg Volume'],
+            'Market Cap': prev.statistics['Market Cap'],
+          }
+        }));
+
+      } catch (e) {
+        console.error('Fetch error:', e);
+        setError('server error');
+      }
+    }
+
+    fetchStock();
+  }, [symbol]); 
 
   const [selectedStock, setSelectedStock] = useState<StockDetail>({
     symbol: 'TSLA',
     name: 'Tesla, inc.',
-    price: 255.30,
-    priceChange: 6.35,
+    price: 255.30, // Default value
+    priceChange: 2.55, // Default value
     changePercent: 2.55,
     marketCap: '$800B',
     tradingView: 'Buy',
     statistics: {
-      'Open': '$248.95',
-      'High': '$257.20',
-      'Low': '$246.80',
-      'Volume': '125.4M',
-      'Avg Volume': '110.2M',
+      'Open': '0.00',
+      'High': '0.00',
+      'Low': '0.00',
+      'Volume': '0',
+      'Avg Volume': '0',
       'Market Cap': '$800.5B',
-      'P/E Ratio': '65.32',
-      '52 Week High': '$299.29',
-      '52 Week Low': '$101.81',
-      'Dividend Yield': 'N/A',
-      'Beta': '2.01',
-      'EPS': '3.91',
     },
     chartData: Array.from({ length: 50 }, (_, i) => 200 + Math.random() * 100),
   });
 
   const [searchQuery, setSearchQuery] = useState('');
   const [showAIChat, setShowAIChat] = useState(false);
+  const [showDropdown, setShow] = useState(false);
 
   const removeStock = (id: string) => {
     setWatchlist(watchlist.filter(stock => stock.id !== id));
   };
 
   const handleStockClick = (stock: Stock) => {
-    // In a real app, this would fetch detailed stock data from an API
+    // Update symbol to trigger data fetch
+    console.log(stock)
+    setSymbol(stock.symbol);
+    
+    // Update selected stock with basic info
     setSelectedStock({
       symbol: stock.symbol,
       name: `${stock.symbol} Company`,
@@ -81,25 +140,14 @@ const StockDashboard: React.FC = () => {
         'Volume': `${(Math.random() * 200).toFixed(1)}M`,
         'Avg Volume': `${(Math.random() * 150).toFixed(1)}M`,
         'Market Cap': `$${(Math.random() * 1000).toFixed(1)}B`,
-        'P/E Ratio': (Math.random() * 100).toFixed(2),
-        '52 Week High': `$${(stock.price + 50).toFixed(2)}`,
-        '52 Week Low': `$${(stock.price - 100).toFixed(2)}`,
-        'Dividend Yield': `${(Math.random() * 3).toFixed(2)}%`,
-        'Beta': (Math.random() * 3).toFixed(2),
-        'EPS': (Math.random() * 10).toFixed(2),
       },
       chartData: Array.from({ length: 50 }, (_, i) => stock.price - 50 + Math.random() * 100),
     });
   };
 
-  const [showDropdown, setShow] = useState(false)
-
   const handleIconClick = () => {
-    setShow(prev => !prev)
-
-  }
-
-
+    setShow(prev => !prev);
+  };
 
   return (
     <div className="dashboard">

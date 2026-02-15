@@ -31,6 +31,8 @@ export async function GET(req: Request) {
       volume: data["Global Quote"]["06. volume"],
       change: data["Global Quote"]["09. change"],
       changePercent: data["Global Quote"]["10. change percent"],
+
+
     });
 
   } catch (error) {
