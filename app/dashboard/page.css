@@ -94,6 +94,79 @@ body {
   background-color: #f3f4f6;
 }
 
+
+/* Container */
+.dropdown-container {
+  position: relative;
+  display: inline-block;
+}
+
+/* User icon button */
+.user-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 50%;
+  transition: background 0.2s ease;
+}
+
+.user-button:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+/* Dropdown box */
+.user-dropdown {
+  position: absolute;
+  top: 45px;
+  right: 0;
+  width: 180px;
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+  padding: 8px 0;
+  z-index: 1000;
+
+  /* Animation */
+  animation: fadeSlide 0.2s ease forwards;
+}
+
+/* Dropdown items container */
+.dropdown-items {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Individual item */
+.item-dropdown {
+  padding: 10px 16px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s ease, padding-left 0.2s ease;
+}
+
+.item-dropdown:hover {
+  background-color: #f5f5f5;
+  padding-left: 20px;
+}
+
+/* Optional: logout styling */
+.item-dropdown:last-child {
+  color: #d9534f;
+}
+
+/* Animation */
+@keyframes fadeSlide {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* Main Layout */
 .main-layout {
   display: flex;

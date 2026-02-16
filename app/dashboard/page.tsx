@@ -207,9 +207,9 @@ const StockDashboard: React.FC = () => {
           { showDropdown && 
             <div className="user-dropdown"> 
               <div className="dropdown-items">
-                <li className="item-dropdown" >username</li>
-                <li className="item-dropdown" >settings</li>
-                <li className="item-dropdown" onClick={handleLogout}>logout</li>
+                <div  className="item-dropdown" >username</div>
+                <div className="item-dropdown" >settings</div>
+                <div className="item-dropdown" onClick={handleLogout}>logout</div>
               </div>
             </div>
           }
