@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search, X, MessageCircle, User, TrendingUp, TrendingDown } from 'lucide-react';
 import './page.css';
+import { useRouter } from 'next/navigation'
 
 interface Stock {
   id: string;
@@ -26,6 +27,7 @@ interface StockDetail {
   chartData: number[];
 }
 
+
 const StockDashboard: React.FC = () => {
   const [watchlist, setWatchlist] = useState<Stock[]>([
     { id: '1', symbol: 'TSLA', price: 255.30, change: 6.35, changePercent: 2.55 },
@@ -45,6 +47,9 @@ const StockDashboard: React.FC = () => {
   const [change, setChange] = useState(0);
   const [percent, setPercent] = useState(0);
   const [error, setError] = useState('');
+
+  const router = useRouter()
+
 
   // Fetch stock data when symbol changes
   useEffect(() => {
@@ -92,7 +97,7 @@ const StockDashboard: React.FC = () => {
     }
 
     fetchStock();
-  }, [symbol]); 
+  }, [symbol]); // Add symbol as dependency to refetch when it changes
 
   const [selectedStock, setSelectedStock] = useState<StockDetail>({
     symbol: 'TSLA',
@@ -145,6 +150,33 @@ const StockDashboard: React.FC = () => {
     });
   };
 
+   const handleLogout = async () => {
+      try {
+        // Call logout API to clear cookies
+        const response = await fetch('../api/logout', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (response.ok) {
+          // Clear client-side storage
+          localStorage.clear();
+          sessionStorage.clear();
+          
+          // Redirect to login
+          router.push('/');
+          router.refresh();
+        } else {
+          console.error('Logout failed');
+        }
+      } catch (error) {
+        console.error('Error during logout:', error);
+      }
+    };
+
+
   const handleIconClick = () => {
     setShow(prev => !prev);
   };
@@ -175,9 +207,9 @@ const StockDashboard: React.FC = () => {
           { showDropdown && 
             <div className="user-dropdown"> 
               <div className="dropdown-items">
-                <p>username</p>
-                <p>settings</p>
-                <p>logout</p>
+                <li className="item-dropdown" >username</li>
+                <li className="item-dropdown" >settings</li>
+                <li className="item-dropdown" onClick={handleLogout}>logout</li>
               </div>
             </div>
           }
