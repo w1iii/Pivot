@@ -55,7 +55,7 @@ const StockDashboard: React.FC = () => {
   useEffect(() => {
     async function fetchStock() {
       try {
-        const res = await fetch(`/api/stock?symbol=${symbol}`);
+        const res = await fetch(`../api/stock?symbol=${symbol}`);
 
         if (!res.ok) {
           throw new Error('server error');

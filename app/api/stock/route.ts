@@ -20,7 +20,12 @@ export async function GET(req: Request) {
 
     const data = await response.json();
 
-    // return NextResponse.json(data["Global Quote"]);
+    if (data.Information) {
+        console.log('Alpha Vantage rate limit:', data.Information);
+        // Return mock data when rate limited
+        return NextResponse.json({message: data.Information});
+      }
+
 
     return NextResponse.json({
       symbol: data["Global Quote"]["01. symbol"],
@@ -31,11 +36,10 @@ export async function GET(req: Request) {
       volume: data["Global Quote"]["06. volume"],
       change: data["Global Quote"]["09. change"],
       changePercent: data["Global Quote"]["10. change percent"],
-
-
     });
 
   } catch (error) {
+    console.log(error)
     return NextResponse.json(
       { error: "Failed to fetch stock data" },
       { status: 500 }
