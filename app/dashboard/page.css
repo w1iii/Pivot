@@ -197,6 +197,12 @@ body {
   opacity: 0.9;
 }
 
+
+.active-stock {
+  background: #111;
+  border-left: 3px solid #00FF09;
+}
+
 .remove-button {
   position: absolute;
   top: 0.5rem;

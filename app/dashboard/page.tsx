@@ -126,29 +126,36 @@ const StockDashboard: React.FC = () => {
     setWatchlist(watchlist.filter(stock => stock.id !== id));
   };
 
-  const handleStockClick = (stock: Stock) => {
-    // Update symbol to trigger data fetch
-    console.log(stock)
-    setSymbol(stock.symbol);
-    
-    // Update selected stock with basic info
-    setSelectedStock({
-      symbol: stock.symbol,
-      name: `${stock.symbol} Company`,
-      price: stock.price,
-      priceChange: stock.change,
-      changePercent: stock.changePercent,
-      statistics: {
-        'Open': `$${(stock.price - 5).toFixed(2)}`,
-        'High': `$${(stock.price + 10).toFixed(2)}`,
-        'Low': `$${(stock.price - 8).toFixed(2)}`,
-        'Volume': `${(Math.random() * 200).toFixed(1)}M`,
-        'Avg Volume': `${(Math.random() * 150).toFixed(1)}M`,
-        'Market Cap': `$${(Math.random() * 1000).toFixed(1)}B`,
-      },
-      chartData: Array.from({ length: 50 }, (_, i) => stock.price - 50 + Math.random() * 100),
-    });
-  };
+
+    const handleStockClick = (stock: Stock) => {
+      // If clicking the same stock → reset to default TSLA
+      if (selectedStock.symbol === stock.symbol) {
+        setSymbol(stock.symbol);
+        return;
+      }
+
+      // Otherwise behave normally
+      setSymbol(stock.symbol);
+
+      setSelectedStock({
+        symbol: stock.symbol,
+        name: `${stock.symbol} Company`,
+        price: stock.price,
+        priceChange: stock.change,
+        changePercent: stock.changePercent,
+        statistics: {
+          'Open': `$${(stock.price - 5).toFixed(2)}`,
+          'High': `$${(stock.price + 10).toFixed(2)}`,
+          'Low': `$${(stock.price - 8).toFixed(2)}`,
+          'Volume': `${(Math.random() * 200).toFixed(1)}M`,
+          'Avg Volume': `${(Math.random() * 150).toFixed(1)}M`,
+          'Market Cap': `$${(Math.random() * 1000).toFixed(1)}B`,
+        },
+        chartData: Array.from({ length: 50 }, (_, i) =>
+          stock.price - 50 + Math.random() * 100
+        ),
+      });
+    };
 
    const handleLogout = async () => {
       try {
@@ -207,7 +214,7 @@ const StockDashboard: React.FC = () => {
           { showDropdown && 
             <div className="user-dropdown"> 
               <div className="dropdown-items">
-                <div  className="item-dropdown" >username</div>
+                <div  className="item-dropdown" >user</div>
                 <div className="item-dropdown" >settings</div>
                 <div className="item-dropdown" onClick={handleLogout}>logout</div>
               </div>
@@ -224,7 +231,9 @@ const StockDashboard: React.FC = () => {
             <div
               key={stock.id}
               onClick={() => handleStockClick(stock)}
-              className="stock-card"
+              className={`stock-card ${
+                selectedStock.symbol === stock.symbol ? 'active-stock' : ''
+              }`}
             >
               <button
                 onClick={(e) => {
