@@ -23,22 +23,6 @@ export default function Home() {
     }catch(err: any){
       setError(err.message)
     }
-
-    // const res = await fetch('/api/login', {
-    //   method: "POST",
-    //   headers: { "Content-Type": "application/json", },
-    //   body: JSON.stringify({ email: email, password: password})
-    // })
-    //
-    // if(res.ok){
-    //   console.log("Login success")
-    //   router.push('/dashboard')
-    //   // const data = await res.json()
-    // }else{
-    //   const data = await res.json()
-    //   console.error(data.message)
-    //   setError(data.message)
-    // }
   }
   return (
     <>

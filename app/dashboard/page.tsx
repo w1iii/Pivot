@@ -122,6 +122,48 @@ const StockDashboard: React.FC = () => {
   const [showAIChat, setShowAIChat] = useState(false);
   const [showDropdown, setShow] = useState(false);
 
+
+  const [input, setInput] = useState("");
+    const [messages, setMessages] = useState<
+      { type: "user" | "ai"; text: string }[]
+    >([]);
+
+    const handleSend = async () => {
+      if (!input.trim()) return;
+
+      // Add user's message to chat
+      setMessages((prev) => [...prev, { type: "user", text: input }]);
+
+      // Send request to your Gemini API endpoint
+      try {
+        const res = await fetch("/api/stock-ai", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: `${input} (Stock: ${selectedStock.symbol})` }),
+        });
+
+        const data = await res.json();
+
+        if (data.reply) {
+          setMessages((prev) => [...prev, { type: "ai", text: data.reply }]);
+        } else if (data.error) {
+          setMessages((prev) => [
+            ...prev,
+            { type: "ai", text: `Error: ${data.error}` },
+          ]);
+        }
+      } catch (err) {
+        setMessages((prev) => [
+          ...prev,
+          { type: "ai", text: "Failed to get response from AI." },
+        ]);
+      }
+
+      setInput(""); // Clear input
+    };
+
+  
+
   const removeStock = (id: string) => {
     setWatchlist(watchlist.filter(stock => stock.id !== id));
   };
@@ -160,7 +202,7 @@ const StockDashboard: React.FC = () => {
    const handleLogout = async () => {
       try {
         // Call logout API to clear cookies
-        const response = await fetch('../api/logout', {
+        const response = await fetch('/api/logout', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -341,37 +383,55 @@ const StockDashboard: React.FC = () => {
             </div>
           </div>
 
-          {/* AI Chat Modal/Panel (Placeholder) */}
+
           {showAIChat && (
-            <div className="ai-chat-modal">
-              <div className="ai-chat-header">
-                <h3 className="ai-chat-title">AI Stock Analysis</h3>
-                <button
-                  onClick={() => setShowAIChat(false)}
-                  className="ai-close-button"
-                >
-                  <X size={20} />
-                </button>
-              </div>
-              <div className="ai-chat-content">
-                <div className="ai-message">
-                  <p>
-                    Hello! I'm your AI stock analyst. Ask me anything about {selectedStock.symbol}.
-                  </p>
+                <div className="ai-chat-modal">
+                  <div className="ai-chat-header">
+                    <h3 className="ai-chat-title">AI Stock Analysis</h3>
+                    <button
+                      onClick={() => setShowAIChat(false)}
+                      className="ai-close-button"
+                    >
+                      <X size={20} />
+                    </button>
+                  </div>
+                  <div className="ai-chat-content">
+                    {messages.length === 0 && (
+                      <div className="ai-message">
+                        <p>
+                          Hello! I'm your AI stock analyst. Ask me anything about{" "}
+                          {selectedStock.symbol}.
+                        </p>
+                        <p className="ai-placeholder-text">
+                          Connect your AI API key to enable real-time analysis
+                        </p>
+                      </div>
+                    )}
+
+                    {messages.map((msg, idx) => (
+                      <div
+                        key={idx}
+                        className={`ai-message ${msg.type === "ai" ? "ai-reply" : "user-msg"}`}
+                      >
+                        <p>{msg.text}</p>
                 </div>
-                <p className="ai-placeholder-text">
-                  Connect your AI API key to enable real-time analysis
-                </p>
-              </div>
-              <div className="ai-chat-input-container">
-                <input
-                  type="text"
-                  placeholder="Ask about this stock..."
-                  className="ai-chat-input"
-                />
-              </div>
-            </div>
-          )}
+            ))}
+          </div>
+          <div className="ai-chat-input-container">
+            <input
+              type="text"
+              placeholder="Ask about this stock..."
+              className="ai-chat-input"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSend()}
+            />
+            <button onClick={handleSend} className="ai-send-button">
+              Send
+            </button>
+          </div>
+        </div>
+      )}
         </main>
       </div>
     </div>
