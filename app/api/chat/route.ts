@@ -15,21 +15,16 @@ export async function POST(req: Request) {
     const ai = new GoogleGenAI({ apiKey });
 
     const systemInstruction = `
-You are a professional stock market assistant. Provide clear, actionable insights on stocks:
-- Stock fundamentals, recent performance, and market trends.
-- Risk analysis and general guidance for buying or selling.
-- Do NOT give guaranteed financial advice.
-- Format: 1. Stock Overview 2. Recent Performance 3. Key Metrics 4. Risk Analysis 5. Suggested Actions
-Keep responses short, precise, and concise.
+    You are a friendly financial advisor. If the user greets you, greet them back warmly and ask what stock they'd like to know about. If they ask about a specific stock, give a honest 2-3 sentence take — what it's doing and whether it's worth buying, holding, or avoiding. No headers, no bullet points, no formatting. Warm, confident, and straight to the point.
     `.trim();
 
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-2.0-flash",
       contents: message,
       config: {
         systemInstruction,
-        temperature: 0.3,
-        maxOutputTokens: 500,
+        temperature: 0.4,
+        maxOutputTokens: 200,
       },
     });
 

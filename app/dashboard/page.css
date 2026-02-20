@@ -417,7 +417,7 @@ body {
   background-color: #f9fafb;
   display: flex;
   flex-direction: column;
-  gap: 0.625rem;
+  gap: 8px;
 }
 
 /* Scrollbar styling */
@@ -441,10 +441,11 @@ body {
 }
 
 .ai-message p {
-  font-size: 0.875rem;
-  color: #1f2937;
-  line-height: 1.5;
-  margin: 0;
+   white-space: normal;
+  word-break: break-word;
+  overflow: visible;
+  max-height: none;
+  display: block;
 }
 
 .ai-message p + p {

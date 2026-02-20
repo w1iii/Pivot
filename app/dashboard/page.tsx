@@ -124,9 +124,9 @@ const StockDashboard: React.FC = () => {
 
 
   const [input, setInput] = useState("");
-    const [messages, setMessages] = useState<
-      { type: "user" | "ai"; text: string }[]
-    >([]);
+  const [messages, setMessages] = useState<{ type: "user" | "ai"; text: string }[]>([
+    { type: "ai", text: `Hello! I'm your AI stock analyst. Ask me anything about ${selectedStock.symbol}.` }
+  ]);
 
     const handleSend = async () => {
       if (!input.trim()) return;
