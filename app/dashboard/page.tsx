@@ -136,7 +136,7 @@ const StockDashboard: React.FC = () => {
 
       // Send request to your Gemini API endpoint
       try {
-        const res = await fetch("/api/stock-ai", {
+        const res = await fetch("/api/chat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ message: `${input} (Stock: ${selectedStock.symbol})` }),
@@ -401,9 +401,6 @@ const StockDashboard: React.FC = () => {
                         <p>
                           Hello! I'm your AI stock analyst. Ask me anything about{" "}
                           {selectedStock.symbol}.
-                        </p>
-                        <p className="ai-placeholder-text">
-                          Connect your AI API key to enable real-time analysis
                         </p>
                       </div>
                     )}
