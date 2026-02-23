@@ -29,12 +29,16 @@ interface StockDetail {
 
 
 const StockDashboard: React.FC = () => {
-  const [watchlist, setWatchlist] = useState<Stock[]>([
-    { id: '1', symbol: 'TSLA', price: 255.30, change: 6.35, changePercent: 2.55 },
-    { id: '2', symbol: 'AAPL', price: 255.30, change: -0.75, changePercent: -0.75 },
-    { id: '3', symbol: 'GOOGL', price: 255.30, change: 2.55, changePercent: 2.55 },
-    { id: '4', symbol: 'AMAZN', price: 255.30, change: 2.55, changePercent: 2.55 },
-  ]);
+  // const [watchlist, setWatchlist] = useState<Stock[]>([
+  //   { id: '1', symbol: 'TSLA', price: 255.30, change: 6.35, changePercent: 2.55 },
+  //   { id: '2', symbol: 'AAPL', price: 255.30, change: -0.75, changePercent: -0.75 },
+  //   { id: '3', symbol: 'GOOGL', price: 255.30, change: 2.55, changePercent: 2.55 },
+  //   { id: '4', symbol: 'AMAZN', price: 255.30, change: 2.55, changePercent: 2.55 },
+  // ]);
+
+  const [watchlist, setWatchlist] = useState<Stock[]>([]); // start empty, load from DB
+  const [newSymbol, setNewSymbol] = useState('');
+  const [adding, setAdding] = useState(false);
   
   const [symbol, setSymbol] = useState('TSLA');
   const [open, setOpen] = useState(0);
@@ -99,6 +103,30 @@ const StockDashboard: React.FC = () => {
     fetchStock();
   }, [symbol]); // Add symbol as dependency to refetch when it changes
 
+  // LOAD WATCH LIST
+  useEffect(() => {
+    async function loadWatchlist() {
+      const res = await fetch('/api/watchlist');
+      if (!res.ok) return;
+      const saved: { symbol: string }[] = await res.json();
+
+      const stocks = await Promise.all(saved.map(async ({ symbol }) => {
+        const res = await fetch(`/api/stock?symbol=${symbol}`);
+        const data = await res.json();
+        return {
+          id: symbol,
+          symbol,
+          price: parseFloat(data.price) || 0,
+          change: parseFloat(data.change) || 0,
+          changePercent: parseFloat(data.changePercent) || 0,
+        };
+      }));
+      setWatchlist(stocks);
+    }
+    loadWatchlist();
+  }, []);
+
+
   const [selectedStock, setSelectedStock] = useState<StockDetail>({
     symbol: 'TSLA',
     name: 'Tesla, inc.',
@@ -118,7 +146,6 @@ const StockDashboard: React.FC = () => {
     chartData: Array.from({ length: 50 }, (_, i) => 200 + Math.random() * 100),
   });
 
-  const [searchQuery, setSearchQuery] = useState('');
   const [showAIChat, setShowAIChat] = useState(false);
   const [showDropdown, setShow] = useState(false);
 
@@ -162,11 +189,50 @@ const StockDashboard: React.FC = () => {
       setInput(""); // Clear input
     };
 
-  
+  // ADD STOCK
+  const addStock = async () => {
+    if (!newSymbol.trim() || adding) return;
+    const upper = newSymbol.toUpperCase();
+    if (watchlist.find(s => s.symbol === upper)) return; // no duplicates
+    
+    setAdding(true);
+    const res = await fetch(`/api/stock?symbol=${upper}`);
+    const data = await res.json();
 
-  const removeStock = (id: string) => {
-    setWatchlist(watchlist.filter(stock => stock.id !== id));
+    const stock: Stock = {
+      id: upper,
+      symbol: upper,
+      price: parseFloat(data.price) || 0,
+      change: parseFloat(data.change) || 0,
+      changePercent: parseFloat(data.changePercent) || 0,
+    };
+
+    setWatchlist(prev => [...prev, stock]);
+    setNewSymbol('');
+    setAdding(false);
+
+    await fetch('/api/watchlist', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ symbol: upper }),
+    });
   };
+
+
+  // REMOVE STOCK
+  const removeStock = async (id: string) => {
+    const stock = watchlist.find(s => s.id === id);
+    setWatchlist(watchlist.filter(s => s.id !== id));
+    await fetch('/api/watchlist', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ symbol: stock?.symbol }),
+    });
+  };
+
+  // const removeStock = (id: string) => {
+  //   setWatchlist(watchlist.filter(stock => stock.id !== id));
+  // };
 
 
     const handleStockClick = (stock: Stock) => {
@@ -236,17 +302,12 @@ const StockDashboard: React.FC = () => {
       <nav className="navbar">
         <div className="navbar-content">
           <div className="navbar-left">
-            <h1 className="logo">Pivot.</h1>
-            <div className="search-container">
-              <input
-                type="text"
-                placeholder="Search stocks..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="search-input"
-              />
-              <Search className="search-icon" size={20} />
-            </div>
+            <h1 className="logo">Pivot.</h1> 
+          </div>
+          <div className="center-nav">
+              <p> Market </p>
+              <p> || </p>
+              <p> News </p>
           </div>
           <div className="dropdown-container">
             <button className="user-button" onClick={handleIconClick}>
@@ -269,6 +330,19 @@ const StockDashboard: React.FC = () => {
       <div className="main-layout">
         {/* Sidebar */}
         <aside className="sidebar">
+          <div className="add-stock-container">
+            <input
+              type="text"
+              placeholder="Add ticker..."
+              value={newSymbol}
+              onChange={(e) => setNewSymbol(e.target.value.toUpperCase())}
+              onKeyDown={(e) => e.key === 'Enter' && addStock()}
+              className="add-stock-input"
+            />
+            <button onClick={addStock} className="add-stock-button" disabled={adding}>
+              {adding ? '...' : '+'}
+            </button>
+          </div>
           {watchlist.map((stock) => (
             <div
               key={stock.id}
@@ -307,6 +381,7 @@ const StockDashboard: React.FC = () => {
               </div>
             </div>
           ))}
+           
         </aside>
 
         {/* Main Content */}

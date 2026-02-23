@@ -35,8 +35,12 @@ body {
 .navbar-left {
   display: flex;
   align-items: center;
-  flex: 1;
   max-width: 48rem;
+}
+
+.center-nav{
+  display:flex;
+  gap:0.5rem;
 }
 
 .logo {
@@ -46,38 +50,6 @@ body {
   margin-right: 2rem;
 }
 
-
-
-.search-container {
-  position: relative;
-  flex: 1;
-}
-
-.search-input {
-  width: 100%;
-  padding: 0.5rem 1rem;
-  padding-right: 2.5rem;
-  background-color: #f3f4f6;
-  border: none;
-  border-radius: 0.5rem;
-  font-size: 0.875rem;
-  outline: none;
-  transition: all 0.2s;
-}
-
-.search-input:focus {
-  ring: 2px;
-  ring-color: #3b82f6;
-  box-shadow: 0 0 0 2px #3b82f6;
-}
-
-.search-icon {
-  position: absolute;
-  right: 0.75rem;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #9ca3af;
-}
 
 .user-button {
   margin-left: 1.5rem;
@@ -182,6 +154,32 @@ body {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+}
+
+.add-stock-container {
+  display: flex;
+  gap: 6px;
+  padding: 10px;
+}
+
+.add-stock-input {
+  flex: 1;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+  padding: 8px;
+  color: white;
+  font-size: 13px;
+}
+
+.add-stock-button {
+  background: #00FF09;
+  color: black;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-weight: bold;
+  cursor: pointer;
 }
 
 .stock-card {
