@@ -104,27 +104,37 @@ const StockDashboard: React.FC = () => {
   }, [symbol]); // Add symbol as dependency to refetch when it changes
 
   // LOAD WATCH LIST
+  const [watchlistLoading, setWatchlistLoading] = useState(true);
+
+  // LOAD WATCH LIST
   useEffect(() => {
     async function loadWatchlist() {
-      const res = await fetch('/api/watchlist');
-      if (!res.ok) return;
-      const saved: { symbol: string }[] = await res.json();
+      setWatchlistLoading(true);
+      try {
+        const res = await fetch('/api/watchlist');
+        if (!res.ok) return;
+        const saved: { symbol: string }[] = await res.json();
 
-      const stocks = await Promise.all(saved.map(async ({ symbol }) => {
-        const res = await fetch(`/api/stock?symbol=${symbol}`);
-        const data = await res.json();
-        return {
-          id: symbol,
-          symbol,
-          price: parseFloat(data.price) || 0,
-          change: parseFloat(data.change) || 0,
-          changePercent: parseFloat(data.changePercent) || 0,
-        };
-      }));
-      setWatchlist(stocks);
+        const stocks = await Promise.all(saved.map(async ({ symbol }) => {
+          const res = await fetch(`/api/stock?symbol=${symbol}`);
+          const data = await res.json();
+          return {
+            id: symbol,
+            symbol,
+            price: parseFloat(data.price) || 0,
+            change: parseFloat(data.change) || 0,
+            changePercent: parseFloat(data.changePercent) || 0,
+          };
+        }));
+        setWatchlist(stocks);
+      } catch (error) {
+        console.error('Error loading watchlist:', error);
+      } finally {
+        setWatchlistLoading(false);
+      }
     }
     loadWatchlist();
-  }, []);
+  }, []); // Add dependency if needed
 
 
   const [selectedStock, setSelectedStock] = useState<StockDetail>({
@@ -343,7 +353,8 @@ const StockDashboard: React.FC = () => {
               {adding ? '...' : '+'}
             </button>
           </div>
-          {watchlist.map((stock) => (
+          {watchlistLoading? ( <div className= "loading">Loading watchlist... </div> ):(
+          watchlist.map((stock) => (
             <div
               key={stock.id}
               onClick={() => handleStockClick(stock)}
@@ -380,6 +391,7 @@ const StockDashboard: React.FC = () => {
                 {stock.changePercent.toFixed(2)}%
               </div>
             </div>
+            )
           ))}
            
         </aside>
