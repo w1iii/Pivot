@@ -9,7 +9,6 @@ async function getUserId(): Promise<string | null>{
   if (!token) return null;
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { user: { id: string }};
-    console.log(decoded.user.id);
     return decoded.user.id;
   } catch {
     return null;
@@ -24,23 +23,33 @@ export async function GET() {
     'SELECT symbol FROM watchlist WHERE user_id = $1 ORDER BY added_at ASC',
     [userId]
   );
+
   return NextResponse.json(result.rows);
 }
 
 export async function POST(req: Request) {
-  const userId = getUserId();
+  const userId = await getUserId();
+
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { symbol } = await req.json();
-  await pool.query(
-    'INSERT INTO watchlist (user_id, symbol) VALUES ($1, $2) ON CONFLICT DO NOTHING',
-    [userId, symbol.toUpperCase()]
-  );
-  return NextResponse.json({ success: true });
+  try{
+    await pool.query(
+      'INSERT INTO watchlist (user_id, symbol) VALUES ($1, $2) ON CONFLICT DO NOTHING',
+      [userId, symbol.toUpperCase()]
+    );
+
+    return NextResponse.json({ success: true });
+
+  }catch(e){
+    console.log(e)
+    return NextResponse.json({ e })
+  }
+
 }
 
 export async function DELETE(req: Request) {
-  const userId = getUserId();
+  const userId = await getUserId();
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { symbol } = await req.json();
