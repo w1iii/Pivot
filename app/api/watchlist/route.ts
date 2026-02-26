@@ -2,8 +2,9 @@ import { NextResponse } from 'next/server';
 import pool from '../../lib/db';
 import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
+import { redis } from "../../lib/redis";
 
-
+const DEFAULT_EXPIRATION = 3600
 
 async function getUserId(): Promise<string | null>{
   const cookieStore = await cookies()
@@ -21,13 +22,39 @@ export async function GET() {
   const userId = await getUserId();
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const result = await pool.query(
-    'SELECT symbol FROM watchlist WHERE user_id = $1 ORDER BY added_at ASC',
-    [userId]
-  );
+  const cacheKey = `watchlist:${userId}` ;
 
-  return NextResponse.json(result.rows);
-}
+  try{
+    const cachedData = await redis.get(cacheKey);
+    if(cachedData){
+      console.log("Serving from Redis cache");
+      return NextResponse.json(JSON.parse(cachedData));
+    }
+
+    console.log("Fetching data from DB")
+
+    const result = await pool.query(
+      'SELECT symbol FROM watchlist WHERE user_id = $1 ORDER BY added_at ASC',
+      [userId]
+    );
+
+    console.log("query result: ", result.rows)
+
+    await redis.set(cacheKey, JSON.stringify(result.rows),{
+      EX: DEFAULT_EXPIRATION,
+    });
+
+
+    return NextResponse.json(result.rows);
+
+  }catch(e){
+    console.log(e)
+    return NextResponse.json({
+      error: "Failed to get data from database. Server Error",
+    }, {status: 500 })
+
+    }
+  }
 
 export async function POST(req: Request) {
   const userId = await getUserId();

@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server";
 import { redis } from "../../lib/redis";
 
-export const runtime = "nodejs";
-
 const DEFAULT_EXPIRATION = 3600;
 
 export async function GET(req: Request) {
