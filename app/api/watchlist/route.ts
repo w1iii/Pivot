@@ -3,6 +3,8 @@ import pool from '../../lib/db';
 import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
 
+
+
 async function getUserId(): Promise<string | null>{
   const cookieStore = await cookies()
   const token = cookieStore.get('token')?.value;

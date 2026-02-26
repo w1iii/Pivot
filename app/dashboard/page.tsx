@@ -68,7 +68,6 @@ const StockDashboard: React.FC = () => {
         const data = await res.json();
         console.log('Fetched data:', data);
         
-        // Update state with fetched data
         setOpen(parseFloat(data.open) || 0);
         setHigh(parseFloat(data.high) || 0);
         setLow(parseFloat(data.low) || 0);
@@ -76,7 +75,14 @@ const StockDashboard: React.FC = () => {
         setVolume(parseFloat(data.volume) || 0);
         setChange(parseFloat(data.change) || 0);
         setPercent(parseFloat(data.changePercent) || 0);
-        
+
+        const avgVol = data.avgVolume
+          ? `${(parseFloat(data.avgVolume) / 1_000_000).toFixed(2)}M`
+          : 'N/A';
+        const mktCap = data.marketCap
+          ? `$${(parseFloat(data.marketCap) / 1_000_000_000).toFixed(2)}B`
+          : 'N/A';
+          
         // Update selected stock with real data
         setSelectedStock(prev => ({
           ...prev,
@@ -89,8 +95,8 @@ const StockDashboard: React.FC = () => {
             'High': parseFloat(data.high)?.toFixed(2) || '0.00',
             'Low': parseFloat(data.low)?.toFixed(2) || '0.00',
             'Volume': data.volume ? `${(parseFloat(data.volume) / 1000000).toFixed(2)}M` : '0',
-            'Avg Volume': prev.statistics['Avg Volume'],
-            'Market Cap': prev.statistics['Market Cap'],
+            'Avg Volume': avgVol,   
+            'Market Cap': mktCap,
           }
         }));
 
@@ -101,7 +107,7 @@ const StockDashboard: React.FC = () => {
     }
 
     fetchStock();
-  }, [symbol]); // Add symbol as dependency to refetch when it changes
+  }, [symbol]); 
 
   // LOAD WATCH LIST
   const [watchlistLoading, setWatchlistLoading] = useState(true);
@@ -111,6 +117,10 @@ const StockDashboard: React.FC = () => {
     async function loadWatchlist() {
       setWatchlistLoading(true);
       try {
+        const response = await fetch(`/api/stock?symbol=${symbol}`);
+        const data = await response.json();
+        console.log('Watchlist stock data for', symbol, ':', data); // ADD THIS
+
         const res = await fetch('/api/watchlist');
         if (!res.ok) return;
         const saved: { symbol: string }[] = await res.json();
@@ -118,6 +128,7 @@ const StockDashboard: React.FC = () => {
         const stocks = await Promise.all(saved.map(async ({ symbol }) => {
           const res = await fetch(`/api/stock?symbol=${symbol}`);
           const data = await res.json();
+          console.log(`${symbol} data: `, data)
           return {
             id: symbol,
             symbol,
@@ -129,7 +140,15 @@ const StockDashboard: React.FC = () => {
         setWatchlist(stocks);
       } catch (error) {
         console.error('Error loading watchlist:', error);
-      } finally {
+        console.error(`Error fetching ${symbol}:`, error);
+        return { 
+          id: symbol, 
+          symbol, 
+          price: 0, 
+          change: 0, 
+          changePercent: 0 
+        };
+              } finally {
         setWatchlistLoading(false);
       }
     }
