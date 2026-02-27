@@ -1,9 +1,11 @@
 "use client"
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { Search, X, MessageCircle, User, TrendingUp, TrendingDown } from 'lucide-react';
 import './page.css';
 import { useRouter } from 'next/navigation'
+import { useAuth } from '../contexts/AuthContext';
 
 interface Stock {
   id: string;
@@ -38,129 +40,14 @@ const StockDashboard: React.FC = () => {
 
   const [watchlist, setWatchlist] = useState<Stock[]>([]); // start empty, load from DB
   const [newSymbol, setNewSymbol] = useState('');
-  const [adding, setAdding] = useState(false);
   
   const [symbol, setSymbol] = useState('TSLA');
-  const [open, setOpen] = useState(0);
-  const [high, setHigh] = useState(0);
-  const [low, setLow] = useState(0);
-  const [volume, setVolume] = useState(0);
-  const [avgvolume, setAvg] = useState(0);
-  const [marketcap, setMarketcap] = useState(0);
-  const [price, setPrice] = useState(0);
-  const [change, setChange] = useState(0);
-  const [percent, setPercent] = useState(0);
-  const [error, setError] = useState('');
-
-  const router = useRouter()
-
-
-  // Fetch stock data when symbol changes
-  useEffect(() => {
-    async function fetchStock() {
-      try {
-        const res = await fetch(`../api/stock?symbol=${symbol}`);
-
-        if (!res.ok) {
-          throw new Error('server error');
-        }
-
-        const data = await res.json();
-        console.log('Fetched data:', data);
-        
-        setOpen(parseFloat(data.open) || 0);
-        setHigh(parseFloat(data.high) || 0);
-        setLow(parseFloat(data.low) || 0);
-        setPrice(parseFloat(data.price) || 0);
-        setVolume(parseFloat(data.volume) || 0);
-        setChange(parseFloat(data.change) || 0);
-        setPercent(parseFloat(data.changePercent) || 0);
-
-        const avgVol = data.avgVolume
-          ? `${(parseFloat(data.avgVolume) / 1_000_000).toFixed(2)}M`
-          : 'N/A';
-        const mktCap = data.marketCap
-          ? `$${(parseFloat(data.marketCap) / 1_000_000_000).toFixed(2)}B`
-          : 'N/A';
-          
-        // Update selected stock with real data
-        setSelectedStock(prev => ({
-          ...prev,
-          symbol: symbol,
-          price: parseFloat(data.price) || prev.price,
-          priceChange: parseFloat(data.change) || prev.priceChange,
-          changePercent: parseFloat(data.changePercent) || prev.changePercent,
-          statistics: {
-            'Open': parseFloat(data.open)?.toFixed(2) || '0.00',
-            'High': parseFloat(data.high)?.toFixed(2) || '0.00',
-            'Low': parseFloat(data.low)?.toFixed(2) || '0.00',
-            'Volume': data.volume ? `${(parseFloat(data.volume) / 1000000).toFixed(2)}M` : '0',
-            'Avg Volume': avgVol,   
-            'Market Cap': mktCap,
-          }
-        }));
-
-      } catch (e) {
-        console.error('Fetch error:', e);
-        setError('server error');
-      }
-    }
-
-    fetchStock();
-  }, [symbol]); 
-
-  // LOAD WATCH LIST
-  const [watchlistLoading, setWatchlistLoading] = useState(true);
-
-  // LOAD WATCH LIST
-  useEffect(() => {
-    async function loadWatchlist() {
-      setWatchlistLoading(true);
-      try {
-        const response = await fetch(`/api/stock?symbol=${symbol}`);
-        const data = await response.json();
-        console.log('Watchlist stock data for', symbol, ':', data); // ADD THIS
-
-        const res = await fetch('/api/watchlist');
-        if (!res.ok) return;
-        const saved: { symbol: string }[] = await res.json();
-
-        const stocks = await Promise.all(saved.map(async ({ symbol }) => {
-          const res = await fetch(`/api/stock?symbol=${symbol}`);
-          const data = await res.json();
-          console.log(`${symbol} data: `, data)
-          return {
-            id: symbol,
-            symbol,
-            price: parseFloat(data.price) || 0,
-            change: parseFloat(data.change) || 0,
-            changePercent: parseFloat(data.changePercent) || 0,
-          };
-        }));
-        setWatchlist(stocks);
-      } catch (error) {
-        console.error('Error loading watchlist:', error);
-        console.error(`Error fetching ${symbol}:`, error);
-        return { 
-          id: symbol, 
-          symbol, 
-          price: 0, 
-          change: 0, 
-          changePercent: 0 
-        };
-              } finally {
-        setWatchlistLoading(false);
-      }
-    }
-    loadWatchlist();
-  }, []); // Add dependency if needed
-
-
+  
   const [selectedStock, setSelectedStock] = useState<StockDetail>({
     symbol: 'TSLA',
     name: 'Tesla, inc.',
-    price: 255.30, // Default value
-    priceChange: 2.55, // Default value
+    price: 255.30,
+    priceChange: 2.55,
     changePercent: 2.55,
     marketCap: '$800B',
     tradingView: 'Buy',
@@ -172,17 +59,143 @@ const StockDashboard: React.FC = () => {
       'Avg Volume': '0',
       'Market Cap': '$800.5B',
     },
-    chartData: Array.from({ length: 50 }, (_, i) => 200 + Math.random() * 100),
+    chartData: [250, 245, 260, 255, 270, 265, 280, 275, 290, 285, 300, 295, 310, 305, 320, 315, 330, 325, 340, 335, 350, 345, 360, 355, 370, 365, 380, 375, 390, 385, 400, 395, 410, 405, 420, 415, 430, 425, 440, 435, 450, 445, 460, 455, 470, 465, 480, 475, 490, 485],
   });
 
   const [showAIChat, setShowAIChat] = useState(false);
   const [showDropdown, setShow] = useState(false);
-
-
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<{ type: "user" | "ai"; text: string }[]>([
     { type: "ai", text: `Hello! I'm your AI stock analyst. Ask me anything about ${selectedStock.symbol}.` }
   ]);
+
+  const router = useRouter()
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  // Fetch stock data when symbol changes
+  const { data: stockData, isLoading: stockLoading } = useQuery({
+    queryKey: ['stock', symbol],
+    queryFn: async () => {
+      const res = await fetch(`../api/stock?symbol=${symbol}`);
+      if (!res.ok) throw new Error('server error');
+      return res.json();
+    },
+    enabled: !!symbol,
+  });
+
+  // Update selectedStock when stockData changes
+  useEffect(() => {
+    if (stockData) {
+      const avgVol = stockData.avgVolume
+        ? `${(parseFloat(stockData.avgVolume) / 1_000_000).toFixed(2)}M`
+        : 'N/A';
+      const mktCap = stockData.marketCap
+        ? `$${(parseFloat(stockData.marketCap) / 1_000_000_000).toFixed(2)}B`
+        : 'N/A';
+        
+      setSelectedStock(prev => ({
+        ...prev,
+        symbol: symbol,
+        price: parseFloat(stockData.price) || prev.price,
+        priceChange: parseFloat(stockData.change) || prev.priceChange,
+        changePercent: parseFloat(stockData.changePercent) || prev.changePercent,
+        statistics: {
+          'Open': parseFloat(stockData.open)?.toFixed(2) || '0.00',
+          'High': parseFloat(stockData.high)?.toFixed(2) || '0.00',
+          'Low': parseFloat(stockData.low)?.toFixed(2) || '0.00',
+          'Volume': stockData.volume ? `${(parseFloat(stockData.volume) / 1000000).toFixed(2)}M` : '0',
+          'Avg Volume': avgVol,   
+          'Market Cap': mktCap,
+        }
+      }));
+    }
+  }, [stockData, symbol]); 
+
+  // LOAD WATCH LIST
+  const { data: watchlistData, isLoading: watchlistLoading } = useQuery({
+    queryKey: ['watchlist', user?.id],
+    queryFn: async () => {
+      const res = await fetch('/api/watchlist');
+      if (!res.ok) throw new Error('Failed to fetch watchlist');
+      const saved: { symbol: string }[] = await res.json();
+      
+      if (saved.length === 0) return [];
+
+      // Use batch endpoint to fetch all stocks at once
+      const symbols = saved.map(s => s.symbol);
+      const batchRes = await fetch('/api/stock/batch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ symbols }),
+      });
+      
+      if (!batchRes.ok) throw new Error('Failed to fetch stocks');
+      const stocksData = await batchRes.json();
+
+      return symbols.map((sym: string) => {
+        const data = stocksData[sym] || {};
+        return {
+          id: sym,
+          symbol: sym,
+          price: parseFloat(data.price) || 0,
+          change: parseFloat(data.change) || 0,
+          changePercent: parseFloat(data.changePercent) || 0,
+        };
+        });
+    },
+    enabled: !!user?.id,
+  });
+
+  // Sync watchlist data to state
+  useEffect(() => {
+    if (watchlistData) {
+      setWatchlist(watchlistData);
+    }
+  }, [watchlistData]);
+
+  // Mutations for watchlist
+  const addStockMutation = useMutation({
+    mutationFn: async (upper: string) => {
+      // 1. Fetch stock price data
+      const res = await fetch(`/api/stock?symbol=${upper}`);
+      const data = await res.json();
+      
+      // 2. Save to database
+      await fetch('/api/watchlist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ symbol: upper }),
+      });
+      
+      return { symbol: upper, data };
+    },
+    onSuccess: (result) => {
+      const stock: Stock = {
+        id: result.symbol,
+        symbol: result.symbol,
+        price: parseFloat(result.data.price) || 0,
+        change: parseFloat(result.data.change) || 0,
+        changePercent: parseFloat(result.data.changePercent) || 0,
+      };
+      setWatchlist(prev => [...prev, stock]);
+      queryClient.invalidateQueries({ queryKey: ['watchlist', user?.id] });
+    },
+  });
+
+  const removeStockMutation = useMutation({
+    mutationFn: async (symbol: string) => {
+      await fetch('/api/watchlist', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ symbol }),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['watchlist', user?.id] });
+    },
+  });
+
 
     const handleSend = async () => {
       if (!input.trim()) return;
@@ -220,31 +233,12 @@ const StockDashboard: React.FC = () => {
 
   // ADD STOCK
   const addStock = async () => {
-    if (!newSymbol.trim() || adding) return;
+    if (!newSymbol.trim() || addStockMutation.isPending) return;
     const upper = newSymbol.toUpperCase();
-    if (watchlist.find(s => s.symbol === upper)) return; // no duplicates
+    if (watchlist.find(s => s.symbol === upper)) return;
     
-    setAdding(true);
-    const res = await fetch(`/api/stock?symbol=${upper}`);
-    const data = await res.json();
-
-    const stock: Stock = {
-      id: upper,
-      symbol: upper,
-      price: parseFloat(data.price) || 0,
-      change: parseFloat(data.change) || 0,
-      changePercent: parseFloat(data.changePercent) || 0,
-    };
-
-    setWatchlist(prev => [...prev, stock]);
     setNewSymbol('');
-    setAdding(false);
-
-    await fetch('/api/watchlist', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ symbol: upper }),
-    });
+    await addStockMutation.mutateAsync(upper);
   };
 
 
@@ -252,11 +246,9 @@ const StockDashboard: React.FC = () => {
   const removeStock = async (id: string) => {
     const stock = watchlist.find(s => s.id === id);
     setWatchlist(watchlist.filter(s => s.id !== id));
-    await fetch('/api/watchlist', {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ symbol: stock?.symbol }),
-    });
+    if (stock) {
+      await removeStockMutation.mutateAsync(stock.symbol);
+    }
   };
 
   // const removeStock = (id: string) => {
@@ -284,12 +276,12 @@ const StockDashboard: React.FC = () => {
           'Open': `$${(stock.price - 5).toFixed(2)}`,
           'High': `$${(stock.price + 10).toFixed(2)}`,
           'Low': `$${(stock.price - 8).toFixed(2)}`,
-          'Volume': `${(Math.random() * 200).toFixed(1)}M`,
-          'Avg Volume': `${(Math.random() * 150).toFixed(1)}M`,
-          'Market Cap': `$${(Math.random() * 1000).toFixed(1)}B`,
+          'Volume': `${(stock.price * 2).toFixed(1)}M`,
+          'Avg Volume': `${(stock.price * 1.5).toFixed(1)}M`,
+          'Market Cap': `$${(stock.price * 10).toFixed(1)}B`,
         },
         chartData: Array.from({ length: 50 }, (_, i) =>
-          stock.price - 50 + Math.random() * 100
+          stock.price - 50 + (i * 2)
         ),
       });
     };
@@ -368,8 +360,8 @@ const StockDashboard: React.FC = () => {
               onKeyDown={(e) => e.key === 'Enter' && addStock()}
               className="add-stock-input"
             />
-            <button onClick={addStock} className="add-stock-button" disabled={adding}>
-              {adding ? '...' : '+'}
+            <button onClick={addStock} className="add-stock-button" disabled={addStockMutation.isPending}>
+              {addStockMutation.isPending ? '...' : '+'}
             </button>
           </div>
           {watchlistLoading? ( <div className= "loading">Loading watchlist... </div> ):(
