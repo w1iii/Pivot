@@ -27,10 +27,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const router = useRouter()
-  // Fetch current user on mount
-  useEffect(() => {
-    refreshUser();
-  }, []);
 
   const refreshUser = async () => {
     try {
@@ -51,6 +47,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLoading(false);
     }
   };
+
+  // Fetch current user on mount - intentionally run once
+  useEffect(() => {
+    refreshUser();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const login = async (email: string, password: string) => {
     const response = await fetch('../api/login', {

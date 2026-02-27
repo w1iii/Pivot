@@ -36,8 +36,9 @@ const handleSubmit = async(e: React.FormEvent) => {
       setLoading(false)
       setSuccess('Account created successfully!')
       
-    }catch(e:any){
-      setError(e.message)
+    }catch(e: unknown){
+      const message = e instanceof Error ? e.message : 'Signup failed'
+      setError(message)
       setLoading(false)
     }
 

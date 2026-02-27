@@ -1,6 +1,6 @@
 import { createClient } from "redis";
 
-const globalForRedis = global as any;
+const globalForRedis = globalThis as unknown as { redis?: ReturnType<typeof createClient> };
 
 export const redis =
   globalForRedis.redis ||

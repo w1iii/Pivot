@@ -2,11 +2,10 @@ import {NextRequest, NextResponse} from "next/server";
 import pool from '../../lib/db'
 import bcrypt from 'bcrypt';
 
-export async function POST(req: NextRequest, res: NextResponse){
+export async function POST(req: NextRequest){
     const body = await req.json();
     const {firstname, lastname, address, email, contactno, password} = body;
     
-    // Check if all required fields are provided
     if (!firstname || !lastname || !address || !email || !contactno || !password) {
         return NextResponse.json(
             { error: "Please fill up the form" }, 
@@ -14,7 +13,6 @@ export async function POST(req: NextRequest, res: NextResponse){
         );
     }
     
-    // check email if duplicate
     try{
         const checkDupQuery = `
             SELECT id FROM users WHERE email = $1 
@@ -27,9 +25,9 @@ export async function POST(req: NextRequest, res: NextResponse){
                 { status: 409 }
             );
         }
-    }catch(e: any){
+    }catch(e){
         return NextResponse.json(
-            { message: 'Database query error', error: e.message }, 
+            { message: 'Database query error', error: e instanceof Error ? e.message : 'Unknown error' }, 
             { status: 500 }
         );
     }
@@ -46,15 +44,14 @@ export async function POST(req: NextRequest, res: NextResponse){
                 { status: 409 }
             );
         }
-    }catch(e: any){
+    }catch(e){
         return NextResponse.json(
-            { message: 'Database query error', error: e.message }, 
+            { message: 'Database query error', error: e instanceof Error ? e.message : 'Unknown error' }, 
             { status: 500 }
         );
     }
     const password_hash = await bcrypt.hash(password, 10);
     
-    // add user to database
     try{
         const addQuery = `
             INSERT INTO users(firstname, lastname, address, email, contactno, password_hash)
@@ -68,9 +65,9 @@ export async function POST(req: NextRequest, res: NextResponse){
             user: newuser.rows[0]
         }, { status: 201 });
         
-    }catch(e: any){
+    }catch(e){
         return NextResponse.json(
-            { message: 'Insert user error', error: e.message }, 
+            { message: 'Insert user error', error: e instanceof Error ? e.message : 'Unknown error' }, 
             { status: 500 }
         );
     }

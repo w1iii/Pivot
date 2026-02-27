@@ -11,7 +11,7 @@ export async function POST(req: Request) {
   }
 
   const uniqueSymbols = [...new Set(symbols.map((s: string) => s.toUpperCase()))];
-  const results: Record<string, any> = {};
+  const results: Record<string, Record<string, string | number>> = {};
 
   try {
     const API_KEY = process.env.ALPHA_VANTAGE_KEY;

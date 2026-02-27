@@ -20,8 +20,9 @@ export default function Home() {
     try{ 
       await login(email, password)
       router.push('/dashboard')
-    }catch(err: any){
-      setError(err.message)
+    }catch(_err: unknown){
+      const message = _err instanceof Error ? _err.message : 'Login failed'
+      setError(message)
     }
   }
   return (

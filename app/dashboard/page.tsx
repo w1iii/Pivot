@@ -1,8 +1,8 @@
 "use client"
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
-import { Search, X, MessageCircle, User, TrendingUp, TrendingDown } from 'lucide-react';
+import { X, MessageCircle, User, TrendingUp, TrendingDown } from 'lucide-react';
 import './page.css';
 import { useRouter } from 'next/navigation'
 import { useAuth } from '../contexts/AuthContext';
@@ -68,7 +68,7 @@ const StockDashboard: React.FC = () => {
   const { user } = useAuth();
 
   // Fetch stock data when symbol changes
-  const { data: stockData, isLoading: stockLoading } = useQuery({
+  const { data: stockData } = useQuery({
     queryKey: ['stock', symbol],
     queryFn: async () => {
       const res = await fetch(`../api/stock?symbol=${symbol}`);
@@ -88,6 +88,7 @@ const StockDashboard: React.FC = () => {
         ? `$${(parseFloat(stockData.marketCap) / 1_000_000_000).toFixed(2)}B`
         : 'N/A';
         
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSelectedStock(prev => ({
         ...prev,
         symbol: symbol,
@@ -149,6 +150,7 @@ const StockDashboard: React.FC = () => {
   // Sync watchlist data to state
   useEffect(() => {
     if (watchlistData) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setWatchlist(watchlistData);
     }
   }, [watchlistData]);
@@ -221,7 +223,7 @@ const StockDashboard: React.FC = () => {
             { type: "ai", text: `Error: ${data.error}` },
           ]);
         }
-      } catch (err) {
+      } catch {
         setMessages((prev) => [
           ...prev,
           { type: "ai", text: "Failed to get response from AI." },
@@ -497,7 +499,7 @@ const StockDashboard: React.FC = () => {
                     {messages.length === 0 && (
                       <div className="ai-message">
                         <p>
-                          Hello! I'm your AI stock analyst. Ask me anything about{" "}
+                          Hello! I&apos;m your AI stock analyst. Ask me anything about{" "}
                           {selectedStock.symbol}.
                         </p>
                       </div>

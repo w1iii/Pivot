@@ -83,7 +83,7 @@ export async function POST(req: Request) {
 
       // check symbol if already exist on the cached data
       const exists = watchlist.some(
-        (item: any) => item.symbol === upperSymbol
+        (item: { symbol: string }) => item.symbol === upperSymbol
       );
 
       // if doesn't exist push the data on the watchlist cached db
@@ -125,7 +125,7 @@ export async function DELETE(req: Request) {
 
       // check if symbol in the watchlist if true filter out symbol
       const updated = watchlist.filter(
-        (item: any) => item.symbol !== upperSymbol
+        (item: { symbol: string }) => item.symbol !== upperSymbol
       );
       console.log("Removed data from Redis cache")
 
