@@ -32,20 +32,9 @@ export async function POST(req: Request) {
 
     const text = response.choices[0]?.message?.content ?? "No response";
 
-
-    // const response = await ai.models.generateContent({
-    //   model: "gemini-2.0-flash",
-    //   contents: message,
-    //   config: {
-    //     systemInstruction,
-    //     temperature: 0.4,
-    //     maxOutputTokens: 120,
-    //   },
-    // });
-
     return NextResponse.json({ reply: text });
-  } catch (error: any) {
+  } catch (error) {
     console.error("FULL ERROR:", error);
-    return NextResponse.json({ error: error.message || "Internal error" }, { status: 500 });
+    return NextResponse.json({ error: error instanceof Error ? error.message : "Internal error" }, { status: 500 });
   }
 }
