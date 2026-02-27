@@ -31,12 +31,6 @@ interface StockDetail {
 
 
 const StockDashboard: React.FC = () => {
-  // const [watchlist, setWatchlist] = useState<Stock[]>([
-  //   { id: '1', symbol: 'TSLA', price: 255.30, change: 6.35, changePercent: 2.55 },
-  //   { id: '2', symbol: 'AAPL', price: 255.30, change: -0.75, changePercent: -0.75 },
-  //   { id: '3', symbol: 'GOOGL', price: 255.30, change: 2.55, changePercent: 2.55 },
-  //   { id: '4', symbol: 'AMAZN', price: 255.30, change: 2.55, changePercent: 2.55 },
-  // ]);
 
   const [watchlist, setWatchlist] = useState<Stock[]>([]); // start empty, load from DB
   const [newSymbol, setNewSymbol] = useState('');
@@ -111,7 +105,6 @@ const StockDashboard: React.FC = () => {
       }));
     }
   }, [stockData, symbol]); 
-
   // LOAD WATCH LIST
   const { data: watchlistData, isLoading: watchlistLoading } = useQuery({
     queryKey: ['watchlist', user?.id],
@@ -119,6 +112,7 @@ const StockDashboard: React.FC = () => {
       const res = await fetch('/api/watchlist');
       if (!res.ok) throw new Error('Failed to fetch watchlist');
       const saved: { symbol: string }[] = await res.json();
+      console.log('Watchlist symbols from DB:', saved);
       
       if (saved.length === 0) return [];
 
@@ -132,17 +126,22 @@ const StockDashboard: React.FC = () => {
       
       if (!batchRes.ok) throw new Error('Failed to fetch stocks');
       const stocksData = await batchRes.json();
+      console.log('Batch response:', stocksData);
 
       return symbols.map((sym: string) => {
         const data = stocksData[sym] || {};
+        console.log(`Stock ${sym} data:`, data);
+        const price = parseFloat(data.price);
+        const change = parseFloat(data.change);
+        const changePercent = parseFloat(data.changePercent?.replace('%', '') || '0');
         return {
           id: sym,
           symbol: sym,
-          price: parseFloat(data.price) || 0,
-          change: parseFloat(data.change) || 0,
-          changePercent: parseFloat(data.changePercent) || 0,
+          price: isNaN(price) ? 0 : price,
+          change: isNaN(change) ? 0 : change,
+          changePercent: isNaN(changePercent) ? 0 : changePercent,
         };
-        });
+      });
     },
     enabled: !!user?.id,
   });
@@ -170,7 +169,7 @@ const StockDashboard: React.FC = () => {
       
       return { symbol: upper, data };
     },
-    onSuccess: (result) => {
+    onSuccess: async (result) => {
       const stock: Stock = {
         id: result.symbol,
         symbol: result.symbol,
@@ -179,7 +178,8 @@ const StockDashboard: React.FC = () => {
         changePercent: parseFloat(result.data.changePercent) || 0,
       };
       setWatchlist(prev => [...prev, stock]);
-      queryClient.invalidateQueries({ queryKey: ['watchlist', user?.id] });
+      await queryClient.invalidateQueries({ queryKey: ['watchlist', user?.id] });
+      await queryClient.refetchQueries({ queryKey: ['watchlist', user?.id] });
     },
   });
 
