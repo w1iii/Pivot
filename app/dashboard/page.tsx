@@ -65,7 +65,7 @@ const StockDashboard: React.FC = () => {
 
   const router = useRouter()
   const queryClient = useQueryClient();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
 
   // Fetch stock data when symbol changes
   const { data: stockData } = useQuery({
@@ -107,7 +107,7 @@ const StockDashboard: React.FC = () => {
     }
   }, [stockData, symbol]); 
   // LOAD WATCH LIST
-  const { data: watchlistData, isLoading: watchlistLoading } = useQuery({
+  const { data: watchlistData, isLoading: watchlistLoading, isError: watchlistError, error: watchlistErrorData } = useQuery({
     queryKey: ['watchlist', user?.id],
     queryFn: async () => {
       const res = await fetch('/api/watchlist');
@@ -119,11 +119,13 @@ const StockDashboard: React.FC = () => {
 
       // Use batch endpoint to fetch all stocks at once
       const symbols = saved.map(s => s.symbol);
+      console.log("Symbols: ", symbols)
       const batchRes = await fetch('/api/stock/batch', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ symbols }),
       });
+      console.log("Batch Response: ", batchRes)
       
       if (!batchRes.ok) throw new Error('Failed to fetch stocks');
       const stocksData = await batchRes.json();
@@ -134,7 +136,7 @@ const StockDashboard: React.FC = () => {
         console.log(`Stock ${sym} data:`, data);
         const price = parseFloat(data.price);
         const change = parseFloat(data.change);
-        const changePercent = parseFloat(data.changePercent?.replace('%', '') || '0');
+        const changePercent = parseFloat(String(data.changePercent ?? '').replace('%', '') || '0');
         return {
           id: sym,
           symbol: sym,
@@ -144,13 +146,15 @@ const StockDashboard: React.FC = () => {
         };
       });
     },
-    enabled: !!user?.id,
+    enabled: !!user?.id && !authLoading,
   });
+
 
   // Sync watchlist data to state
   useEffect(() => {
     if (watchlistData) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
+      console.log("Watchlist data frontend: ", watchlistData)
       setWatchlist(watchlistData);
     }
   }, [watchlistData]);
@@ -181,7 +185,6 @@ const StockDashboard: React.FC = () => {
       };
       setWatchlist(prev => [...prev, stock]);
       await queryClient.invalidateQueries({ queryKey: ['watchlist', user?.id] });
-      await queryClient.refetchQueries({ queryKey: ['watchlist', user?.id] });
     },
   });
 
@@ -366,7 +369,9 @@ const StockDashboard: React.FC = () => {
               {addStockMutation.isPending ? '...' : '+'}
             </button>
           </div>
-          {watchlistLoading? ( <div className= "loading">Loading watchlist... </div> ):(
+          {watchlistLoading || authLoading ? ( <div className= "loading">Loading watchlist... </div> ): watchlistError ? (
+            <div className="error">Failed to load watchlist: {watchlistErrorData?.message}</div>
+          ) : (
           watchlist.map((stock) => (
             <div
               key={stock.id}

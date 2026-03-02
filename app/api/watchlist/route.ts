@@ -23,13 +23,17 @@ export async function GET() {
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const cacheKey = `watchlist:${userId}`;
-  console.log(cacheKey)
 
   try{
-    const cachedData = await redis.get(cacheKey);
-    if(cachedData){
-      console.log("Serving from Redis cache");
-      return NextResponse.json(JSON.parse(cachedData));
+    let cachedData = null;
+    try {
+      cachedData = await redis.get(cacheKey);
+      if(cachedData){
+        console.log("Serving from Redis cache");
+        return NextResponse.json(JSON.parse(cachedData));
+      }
+    } catch (redisErr) {
+      console.log("Redis not available, skipping cache:", redisErr);
     }
 
     console.log("Fetching data from DB")
@@ -41,9 +45,13 @@ export async function GET() {
 
     console.log("query result: ", result.rows)
 
-    await redis.set(cacheKey, JSON.stringify(result.rows),{
-      EX: DEFAULT_EXPIRATION,
-    });
+    try {
+      await redis.set(cacheKey, JSON.stringify(result.rows),{
+        EX: DEFAULT_EXPIRATION,
+      });
+    } catch (redisErr) {
+      console.log("Redis not available, skipping cache write:", redisErr);
+    }
 
 
     return NextResponse.json(result.rows);
@@ -94,6 +102,8 @@ export async function POST(req: Request) {
         await redis.set(cacheKey, JSON.stringify(watchlist), {
           EX: DEFAULT_EXPIRATION,
         });
+
+        await redis.del(`batch:${userId}`);
       }
     }
 
@@ -133,6 +143,8 @@ export async function DELETE(req: Request) {
       await redis.set(cacheKey, JSON.stringify(updated), {
         EX: DEFAULT_EXPIRATION,
       });
+
+      await redis.del(`batch:${userId}`);
     }
 
     return NextResponse.json({ success: true });

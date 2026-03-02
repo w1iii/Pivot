@@ -18,10 +18,13 @@ async function getUserId(): Promise<string | null>{
 }
 
 export async function POST(req: Request) {
-  const userId = getUserId();
+  const userId = await getUserId();
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { symbols } = await req.json();
+  console.log("============================================" )
+  console.log("From Backend Batch route symbols: ", symbols)
+  console.log("============================================" )
 
   if (!symbols || !Array.isArray(symbols)) {
     return NextResponse.json(
@@ -37,7 +40,7 @@ export async function POST(req: Request) {
   try {
     const cachedData = await redis.get(cacheKey);
     if(cachedData){
-      console.log("Serving from Redis cache (batch): ");
+      console.log("Serving from Redis cache (batch): ", cachedData);
       return NextResponse.json(JSON.parse(cachedData));
     }
     const API_KEY = process.env.ALPHA_VANTAGE_KEY;
@@ -123,11 +126,17 @@ export async function POST(req: Request) {
       }
     }
 
-    console.log(results);
-    await redis.set(cacheKey, JSON.stringify(results),{
-      EX: DEFAULT_EXPIRATION,
-    });
+    try {
+      await redis.set(cacheKey, JSON.stringify(results),{
+        EX: DEFAULT_EXPIRATION,
+      });
+    } catch (redisErr) {
+      console.log("Redis not available, skipping cache write:", redisErr);
+    }
 
+    console.log("============================================" )
+    console.log("Results batch: ", results);
+    console.log("============================================" )
     return NextResponse.json(results);
   } catch (error) {
     console.log(error);
