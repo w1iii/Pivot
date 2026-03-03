@@ -2,6 +2,11 @@
 
 Personal stock tracking dashboard with AI-powered analysis.
 
+<img width="1440" height="810" alt="Screenshot 2026-03-03 at 9 31 37 PM" src="https://github.com/user-attachments/assets/caf76bce-e907-4fb6-a90e-03925e0f4373" />
+<img width="1440" height="810" alt="Screenshot 2026-03-03 at 9 32 40 PM" src="https://github.com/user-attachments/assets/5566a9ac-e799-45a3-8226-86f46bc77a03" />
+<img width="1439" height="811" alt="Screenshot 2026-03-03 at 9 32 08 PM" src="https://github.com/user-attachments/assets/e5ee8747-f72c-492b-a765-ec23e6050f09" />
+
+
 [![Next.js](https://img.shields.io/badge/Next.js-16-black)](https://nextjs.org)
 [![React](https://img.shields.io/badge/React-19-61DAFB)](https://react.dev)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-blue)](https://www.typescriptlang.org)
