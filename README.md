@@ -1,39 +1,108 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Pivot
+
+Personal stock tracking dashboard with AI-powered analysis.
+
+[![Next.js](https://img.shields.io/badge/Next.js-16-black)](https://nextjs.org)
+[![React](https://img.shields.io/badge/React-19-61DAFB)](https://react.dev)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-blue)](https://www.typescriptlang.org)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-336791)](https://www.postgresql.org)
+
+## Features
+
+- **User Authentication** - Secure signup and login with JWT-based authentication
+- **Personal Watchlist** - Create and manage your custom stock watchlist
+- **Real-time Data** - Track stock prices, changes, and market statistics
+- **Interactive Charts** - Visualize stock performance with dynamic price charts
+- **AI Stock Analyst** - Get AI-powered insights and analysis for any stock (powered by Groq)
+
+## Tech Stack
+
+- **Frontend:** Next.js 16, React 19, TypeScript, Tailwind CSS
+- **Backend:** Next.js API Routes
+- **Database:** PostgreSQL
+- **Cache:** Redis
+- **Authentication:** JWT (jose)
+- **AI:** Groq SDK
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
 
+- Node.js 18+
+- PostgreSQL
+- Redis
+
+### Installation
+
+1. Clone the repository:
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone <repository-url>
+cd pivot
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. Install dependencies:
+```bash
+npm install
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+3. Set up environment variables:
+```bash
+cp .env.example .env.local
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+4. Configure your `.env.local` with the following variables:
+```env
+# Database
+DATABASE_URL=postgresql://user:password@localhost:5432/pivot
 
-## Learn More
+# Redis
+REDIS_URL=redis://localhost:6379
 
-To learn more about Next.js, take a look at the following resources:
+# JWT
+JWT_SECRET=your-jwt-secret-key
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+# AI (Groq)
+GROQ_API_KEY=your-groq-api-key
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+5. Initialize the database:
+```bash
+# Run database migrations/schema as per your setup
+```
 
-## Deploy on Vercel
+### Running the App
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Start the development server:
+```bash
+npm run dev
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-# Pivot
-# Pivot
-# Pivot
+Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+## API Endpoints
+
+### Authentication
+- `POST /api/signup` - Create a new account
+- `POST /api/login` - Login and receive JWT
+- `POST /api/logout` - Logout and clear session
+- `GET /api/me` - Get current user info
+
+### Stocks
+- `GET /api/stock?symbol=<SYMBOL>` - Get stock data for a symbol
+- `POST /api/stock/batch` - Get stock data for multiple symbols
+
+### Watchlist
+- `GET /api/watchlist` - Get user's watchlist
+- `POST /api/watchlist` - Add stock to watchlist
+- `DELETE /api/watchlist` - Remove stock from watchlist
+
+### AI Chat
+- `POST /api/chat` - Chat with AI stock analyst
+
+## License
+
+MIT License
+
+## Author
+
+Lui Franz Lomugdang - lomugdanglf.19@gmail.com

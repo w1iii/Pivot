@@ -16,6 +16,10 @@ export async function GET(req: Request) {
 
   const cacheKey = `stock:${symbol.toUpperCase()}`;
 
+  console.log("=======================================")
+  console.log("Serving stock content from stock route")
+  console.log("=======================================")
+
   try {
     // 🔥 1️⃣ Check Redis Cache First
     const cachedData = await redis.get(cacheKey);
