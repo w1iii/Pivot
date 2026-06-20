@@ -209,9 +209,7 @@ const Dashboard: React.FC = () => {
   };
 
     const handleStockClick = (stock: Stock) => {
-      setSymbol(stock.symbol);
-      setShowAIChat(false);
-      setMessages([]);
+      router.push(`/dashboard/watchlist/${stock.symbol}`);
     };
 
     const clearSelectedStock = () => {
