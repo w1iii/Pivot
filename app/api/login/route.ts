@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { generateToken, setAuthCookie } from '../../lib/auth/jwt';
+import { generateToken } from '../../lib/auth/jwt';
 import type { User } from '../../lib/auth/jwt';
 import pool from '../../lib/db'
 import bcrypt from 'bcrypt'
@@ -9,7 +9,6 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { email, password } = body;
 
-    // Validate input
     if (!email || !password) {
       return NextResponse.json(
         { error: 'Email and password are required' },
@@ -26,12 +25,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Generate JWT token
     const token = await generateToken(user);
-    console.log(token)
-
-    // Set cookie
-    await setAuthCookie(token);
 
     const response = NextResponse.json({
       success: true,
@@ -41,12 +35,13 @@ export async function POST(request: NextRequest) {
       },
     })
 
-     response.cookies.set('token', token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        path: '/',   
-      });
+    response.cookies.set('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60,
+      path: '/',
+    });
 
     return response
 
@@ -62,16 +57,16 @@ export async function POST(request: NextRequest) {
 
 async function authenticateUser(email: string, password: string): Promise<User | null> {
     try{
-        const query = `SELECT id, password_hash FROM users WHERE email = $1`
+        const query = `SELECT id, email, password_hash FROM users WHERE email = $1`
         const result = await pool.query(query, [email])
 
-        const user = result.rows[0]
-        if (!user) return null
+        const row = result.rows[0]
+        if (!row) return null
 
-        const isMatch = await bcrypt.compare(password, user.password_hash)
+        const isMatch = await bcrypt.compare(password, row.password_hash)
 
         if(!isMatch) return null
-        return user
+        return { id: row.id, email: row.email }
     }catch(e){
         console.log(e, 'server error')
     }

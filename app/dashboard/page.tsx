@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { X, MessageCircle, User, TrendingUp, TrendingDown } from 'lucide-react';
 import './page.css';
@@ -21,54 +21,54 @@ interface StockDetail {
   price: number;
   priceChange: number;
   changePercent: number;
-  marketCap?: string;
-  tradingView?: string;
   statistics: {
     [key: string]: string | number;
   };
   chartData: number[];
 }
 
+function buildStockDetail(symbol: string, data: Record<string, string>): StockDetail {
+  const avgVol = data.avgVolume
+    ? `${(parseFloat(data.avgVolume) / 1_000_000).toFixed(2)}M`
+    : 'N/A';
+  const mktCap = data.marketCap
+    ? `$${(parseFloat(data.marketCap) / 1_000_000_000).toFixed(2)}B`
+    : 'N/A';
+
+  return {
+    symbol,
+    name: symbol,
+    price: parseFloat(data.price) || 0,
+    priceChange: parseFloat(data.change) || 0,
+    changePercent: parseFloat(data.changePercent) || 0,
+    statistics: {
+      'Open': parseFloat(data.open)?.toFixed(2) || '0.00',
+      'High': parseFloat(data.high)?.toFixed(2) || '0.00',
+      'Low': parseFloat(data.low)?.toFixed(2) || '0.00',
+      'Volume': data.volume ? `${(parseFloat(data.volume) / 1000000).toFixed(2)}M` : '0',
+      'Avg Volume': avgVol,
+      'Market Cap': mktCap,
+    },
+    chartData: Array.from({ length: 50 }, (_, i) =>
+      symbol.charCodeAt(0) * 2 + (i * 3)
+    ),
+  };
+}
 
 const StockDashboard: React.FC = () => {
 
-  const [watchlist, setWatchlist] = useState<Stock[]>([]); // start empty, load from DB
   const [newSymbol, setNewSymbol] = useState('');
-  
-  const [symbol, setSymbol] = useState('TSLA');
-  
-  const [selectedStock, setSelectedStock] = useState<StockDetail>({
-    symbol: 'TSLA',
-    name: 'Tesla, inc.',
-    price: 255.30,
-    priceChange: 2.55,
-    changePercent: 2.55,
-    marketCap: '$800B',
-    tradingView: 'Buy',
-    statistics: {
-      'Open': '0.00',
-      'High': '0.00',
-      'Low': '0.00',
-      'Volume': '0',
-      'Avg Volume': '0',
-      'Market Cap': '$800.5B',
-    },
-    chartData: [250, 245, 260, 255, 270, 265, 280, 275, 290, 285, 300, 295, 310, 305, 320, 315, 330, 325, 340, 335, 350, 345, 360, 355, 370, 365, 380, 375, 390, 385, 400, 395, 410, 405, 420, 415, 430, 425, 440, 435, 450, 445, 460, 455, 470, 465, 480, 475, 490, 485],
-  });
-
+  const [symbol, setSymbol] = useState<string | null>(null);
   const [showAIChat, setShowAIChat] = useState(false);
   const [showDropdown, setShow] = useState(false);
   const [input, setInput] = useState("");
-  const [messages, setMessages] = useState<{ type: "user" | "ai"; text: string }[]>([
-    { type: "ai", text: `Hello! I'm your AI stock analyst. Ask me anything about ${selectedStock.symbol}.` }
-  ]);
+  const [messages, setMessages] = useState<{ type: "user" | "ai"; text: string }[]>([]);
 
   const router = useRouter()
   const queryClient = useQueryClient();
   const { user, loading: authLoading } = useAuth();
 
-  // Fetch stock data when symbol changes
-  const { data: stockData } = useQuery({
+  const { data: stockData, isLoading: stockLoading } = useQuery({
     queryKey: ['stock', symbol],
     queryFn: async () => {
       const res = await fetch(`../api/stock?symbol=${symbol}`);
@@ -78,62 +78,29 @@ const StockDashboard: React.FC = () => {
     enabled: !!symbol,
   });
 
-  // Update selectedStock when stockData changes
-  useEffect(() => {
-    if (stockData) {
-      const avgVol = stockData.avgVolume
-        ? `${(parseFloat(stockData.avgVolume) / 1_000_000).toFixed(2)}M`
-        : 'N/A';
-      const mktCap = stockData.marketCap
-        ? `$${(parseFloat(stockData.marketCap) / 1_000_000_000).toFixed(2)}B`
-        : 'N/A';
-        
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setSelectedStock(prev => ({
-        ...prev,
-        symbol: symbol,
-        price: parseFloat(stockData.price) || prev.price,
-        priceChange: parseFloat(stockData.change) || prev.priceChange,
-        changePercent: parseFloat(stockData.changePercent) || prev.changePercent,
-        statistics: {
-          'Open': parseFloat(stockData.open)?.toFixed(2) || '0.00',
-          'High': parseFloat(stockData.high)?.toFixed(2) || '0.00',
-          'Low': parseFloat(stockData.low)?.toFixed(2) || '0.00',
-          'Volume': stockData.volume ? `${(parseFloat(stockData.volume) / 1000000).toFixed(2)}M` : '0',
-          'Avg Volume': avgVol,   
-          'Market Cap': mktCap,
-        }
-      }));
-    }
-  }, [stockData, symbol]); 
-  // LOAD WATCH LIST
-  const { data: watchlistData, isLoading: watchlistLoading, isError: watchlistError, error: watchlistErrorData } = useQuery({
+  const selectedStock: StockDetail | null =
+    symbol && stockData ? buildStockDetail(symbol, stockData) : null;
+
+  const { data: watchlist = [], isLoading: watchlistLoading, isError: watchlistError, error: watchlistErrorData } = useQuery<Stock[]>({
     queryKey: ['watchlist', user?.id],
     queryFn: async () => {
       const res = await fetch('/api/watchlist');
       if (!res.ok) throw new Error('Failed to fetch watchlist');
       const saved: { symbol: string }[] = await res.json();
-      console.log('Watchlist symbols from DB:', saved);
-      
       if (saved.length === 0) return [];
 
-      // Use batch endpoint to fetch all stocks at once
       const symbols = saved.map(s => s.symbol);
-      console.log("Symbols: ", symbols)
       const batchRes = await fetch('/api/stock/batch', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ symbols }),
       });
-      console.log("Batch Response: ", batchRes)
-      
+
       if (!batchRes.ok) throw new Error('Failed to fetch stocks');
       const stocksData = await batchRes.json();
-      console.log('Batch response:', stocksData);
 
       return symbols.map((sym: string) => {
         const data = stocksData[sym] || {};
-        console.log(`Stock ${sym} data:`, data);
         const price = parseFloat(data.price);
         const change = parseFloat(data.change);
         const changePercent = parseFloat(String(data.changePercent ?? '').replace('%', '') || '0');
@@ -149,42 +116,21 @@ const StockDashboard: React.FC = () => {
     enabled: !!user?.id && !authLoading,
   });
 
-
-  // Sync watchlist data to state
-  useEffect(() => {
-    if (watchlistData) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      console.log("Watchlist data frontend: ", watchlistData)
-      setWatchlist(watchlistData);
-    }
-  }, [watchlistData]);
-
-  // Mutations for watchlist
   const addStockMutation = useMutation({
     mutationFn: async (upper: string) => {
-      // 1. Fetch stock price data
       const res = await fetch(`/api/stock?symbol=${upper}`);
       const data = await res.json();
-      
-      // 2. Save to database
+
       await fetch('/api/watchlist', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ symbol: upper }),
       });
-      
+
       return { symbol: upper, data };
     },
-    onSuccess: async (result) => {
-      const stock: Stock = {
-        id: result.symbol,
-        symbol: result.symbol,
-        price: parseFloat(result.data.price) || 0,
-        change: parseFloat(result.data.change) || 0,
-        changePercent: parseFloat(result.data.changePercent) || 0,
-      };
-      setWatchlist(prev => [...prev, stock]);
-      await queryClient.invalidateQueries({ queryKey: ['watchlist', user?.id] });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['watchlist', user?.id] });
     },
   });
 
@@ -203,12 +149,10 @@ const StockDashboard: React.FC = () => {
 
 
     const handleSend = async () => {
-      if (!input.trim()) return;
+      if (!input.trim() || !selectedStock) return;
 
-      // Add user's message to chat
       setMessages((prev) => [...prev, { type: "user", text: input }]);
 
-      // Send request to your Gemini API endpoint
       try {
         const res = await fetch("/api/chat", {
           method: "POST",
@@ -236,59 +180,22 @@ const StockDashboard: React.FC = () => {
       setInput(""); // Clear input
     };
 
-  // ADD STOCK
   const addStock = async () => {
     if (!newSymbol.trim() || addStockMutation.isPending) return;
     const upper = newSymbol.toUpperCase();
     if (watchlist.find(s => s.symbol === upper)) return;
-    
+
     setNewSymbol('');
     await addStockMutation.mutateAsync(upper);
   };
 
-
-  // REMOVE STOCK
   const removeStock = async (id: string) => {
-    const stock = watchlist.find(s => s.id === id);
-    setWatchlist(watchlist.filter(s => s.id !== id));
-    if (stock) {
-      await removeStockMutation.mutateAsync(stock.symbol);
-    }
+    await removeStockMutation.mutateAsync(id);
   };
-
-  // const removeStock = (id: string) => {
-  //   setWatchlist(watchlist.filter(stock => stock.id !== id));
-  // };
 
 
     const handleStockClick = (stock: Stock) => {
-      // If clicking the same stock → reset to default TSLA
-      if (selectedStock.symbol === stock.symbol) {
-        setSymbol(stock.symbol);
-        return;
-      }
-
-      // Otherwise behave normally
       setSymbol(stock.symbol);
-
-      setSelectedStock({
-        symbol: stock.symbol,
-        name: `${stock.symbol} Company`,
-        price: stock.price,
-        priceChange: stock.change,
-        changePercent: stock.changePercent,
-        statistics: {
-          'Open': `$${(stock.price - 5).toFixed(2)}`,
-          'High': `$${(stock.price + 10).toFixed(2)}`,
-          'Low': `$${(stock.price - 8).toFixed(2)}`,
-          'Volume': `${(stock.price * 2).toFixed(1)}M`,
-          'Avg Volume': `${(stock.price * 1.5).toFixed(1)}M`,
-          'Market Cap': `$${(stock.price * 10).toFixed(1)}B`,
-        },
-        chartData: Array.from({ length: 50 }, (_, i) =>
-          stock.price - 50 + (i * 2)
-        ),
-      });
     };
 
    const handleLogout = async () => {
@@ -377,7 +284,7 @@ const StockDashboard: React.FC = () => {
               key={stock.id}
               onClick={() => handleStockClick(stock)}
               className={`stock-card ${
-                selectedStock.symbol === stock.symbol ? 'active-stock' : ''
+                selectedStock?.symbol === stock.symbol ? 'active-stock' : ''
               }`}
             >
               <button
@@ -416,8 +323,16 @@ const StockDashboard: React.FC = () => {
 
         {/* Main Content */}
         <main className="main-content">
+          {!selectedStock ? (
+            <div className="content-wrapper">
+              {stockLoading ? (
+                <div className="loading-state">Loading stock data...</div>
+              ) : (
+                <div className="loading-state">Select a stock from your watchlist</div>
+              )}
+            </div>
+          ) : (
           <div className="content-wrapper">
-            {/* Header with AI Chat Icon */}
             <div className="stock-header">
               <div className="stock-info">
                 <h2 className="stock-title">
@@ -446,7 +361,6 @@ const StockDashboard: React.FC = () => {
               </button>
             </div>
 
-            {/* Chart Area */}
             <div className="chart-container">
               <svg width="100%" height="100%" className="chart-svg">
                 <defs>
@@ -456,7 +370,7 @@ const StockDashboard: React.FC = () => {
                   </linearGradient>
                 </defs>
                 <path
-                  d={`M 0,${300 - (selectedStock.chartData[0] - 150)} ${selectedStock.chartData
+                  d={`M 0,${300 - ((selectedStock.chartData[0] ?? 200) - 150)} ${selectedStock.chartData
                     .map((point, i) => `L ${(i * 1000) / selectedStock.chartData.length},${300 - (point - 150)}`)
                     .join(' ')}`}
                   stroke="#00FF09"
@@ -464,7 +378,7 @@ const StockDashboard: React.FC = () => {
                   fill="none"
                 />
                 <path
-                  d={`M 0,${300 - (selectedStock.chartData[0] - 150)} ${selectedStock.chartData
+                  d={`M 0,${300 - ((selectedStock.chartData[0] ?? 200) - 150)} ${selectedStock.chartData
                     .map((point, i) => `L ${(i * 1000) / selectedStock.chartData.length},${300 - (point - 150)}`)
                     .join(' ')} L 1000,300 L 0,300 Z`}
                   fill="url(#chartGradient)"
@@ -475,7 +389,6 @@ const StockDashboard: React.FC = () => {
               </div>
             </div>
 
-            {/* Statistics Table */}
             <div className="statistics-table">
               <div className="stats-grid">
                 {Object.entries(selectedStock.statistics).map(([key, value], index) => (
@@ -487,9 +400,9 @@ const StockDashboard: React.FC = () => {
               </div>
             </div>
           </div>
+          )}
 
-
-          {showAIChat && (
+          {showAIChat && selectedStock && (
                 <div className="ai-chat-modal">
                   <div className="ai-chat-header">
                     <h3 className="ai-chat-title">AI Stock Analysis</h3>

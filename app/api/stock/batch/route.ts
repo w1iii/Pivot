@@ -1,25 +1,13 @@
 import { NextResponse } from "next/server";
 import { redis } from "../../../lib/redis";
-import { cookies } from 'next/headers';
-import jwt from 'jsonwebtoken';
+import { getCurrentUser } from "../../../lib/auth/jwt";
 
 const DEFAULT_EXPIRATION = 3600;
 
-async function getUserId(): Promise<string | null>{
-  const cookieStore = await cookies()
-  const token = cookieStore.get('token')?.value;
-  if (!token) return null;
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { user: { id: string }};
-    return decoded.user.id;
-  } catch {
-    return null;
-  }
-}
-
 export async function POST(req: Request) {
-  const userId = await getUserId();
-  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const user = await getCurrentUser();
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const userId = user.id;
 
   const { symbols } = await req.json();
   console.log("============================================" )

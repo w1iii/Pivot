@@ -2,7 +2,6 @@
 
 import { createContext, useContext, useEffect, useState } from 'react';
 import type { User } from '../lib/auth/jwt';
-import { useRouter } from 'next/navigation'
 
 interface AuthContextType {
   user: User | null;
@@ -26,18 +25,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const router = useRouter()
-
   const refreshUser = async () => {
     try {
       const response = await fetch('../api/me');
       if (response.ok) {
         const data = await response.json();
-        console.log(data.user)
         setUser(data.user);
-        router.push('/dashboard')
       } else {
-        console.log("no account found")
         setUser(null);
       }
     } catch (error) {
@@ -48,10 +42,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // Fetch current user on mount - intentionally run once
   useEffect(() => {
     refreshUser();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const login = async (email: string, password: string) => {
@@ -86,7 +78,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logout = async () => {
-    await fetch('/api/auth/logout', { method: 'POST' });
+    await fetch('/api/logout', { method: 'POST' });
     setUser(null);
   };
 

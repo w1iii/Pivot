@@ -37,7 +37,7 @@ export default function Home() {
             <h2> Login </h2>
             {error && <p id="invalid-credentials"> {error} </p>}
             <form onSubmit={handleSubmit}>
-              <input type="text" name="email" value={email} placeholder="email" onChange={(e) => setEmail(e.target.value)}/>
+              <input type="text" name="email" value={email} placeholder="email" onChange={(e) => setEmail(e.target.value)} />
               <input type="password" name="password"  value={password} placeholder="password" onChange={(e) => setPassword(e.target.value)}/>
               <button type="submit"> submit </button>
             </form>
