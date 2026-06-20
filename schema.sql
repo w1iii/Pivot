@@ -18,3 +18,7 @@ CREATE TABLE IF NOT EXISTS watchlist (
     added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(user_id, symbol)
 );
+
+CREATE INDEX IF NOT EXISTS idx_watchlist_user_id ON watchlist(user_id);
+
+ALTER TABLE users ALTER COLUMN password_hash TYPE VARCHAR(60);

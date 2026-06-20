@@ -1,14 +1,34 @@
 import {NextRequest, NextResponse} from "next/server";
 import pool from '../../lib/db'
 import bcrypt from 'bcrypt';
+import { generateToken } from '../../lib/auth/jwt';
+import { rateLimit } from '../../lib/rate-limit';
 
 export async function POST(req: NextRequest){
+    const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+      || req.headers.get('x-real-ip')
+      || 'unknown';
+    const { allowed } = await rateLimit(`signup:${ip}`, { maxRequests: 3, interval: 300 });
+    if (!allowed) {
+        return NextResponse.json(
+            { error: 'Too many accounts. Try again later.' },
+            { status: 429 }
+        );
+    }
+
     const body = await req.json();
     const {firstname, lastname, address, email, contactno, password} = body;
     
     if (!firstname || !lastname || !address || !email || !contactno || !password) {
         return NextResponse.json(
             { error: "Please fill up the form" }, 
+            { status: 400 }
+        );
+    }
+
+    if (password.length < 8) {
+        return NextResponse.json(
+            { error: "Password must be at least 8 characters" },
             { status: 400 }
         );
     }
@@ -59,11 +79,23 @@ export async function POST(req: NextRequest){
             RETURNING id, email, firstname, lastname;
         `;
         const newuser = await pool.query(addQuery, [firstname, lastname, address, email, contactno, password_hash])
-        
-        return NextResponse.json({ 
+        const user = newuser.rows[0];
+        const token = await generateToken({ id: user.id, email: user.email });
+
+        const response = NextResponse.json({
             message: 'User added successfully',
-            user: newuser.rows[0]
+            user: { id: user.id, email: user.email, firstname: user.firstname, lastname: user.lastname }
         }, { status: 201 });
+
+        response.cookies.set('token', token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            maxAge: 7 * 24 * 60 * 60,
+            path: '/',
+        });
+
+        return response;
         
     }catch(e){
         return NextResponse.json(

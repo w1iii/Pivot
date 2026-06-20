@@ -3,9 +3,21 @@ import { generateToken } from '../../lib/auth/jwt';
 import type { User } from '../../lib/auth/jwt';
 import pool from '../../lib/db'
 import bcrypt from 'bcrypt'
+import { rateLimit } from '../../lib/rate-limit';
 
 export async function POST(request: NextRequest) {
   try {
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+      || request.headers.get('x-real-ip')
+      || 'unknown';
+    const { allowed, remaining } = await rateLimit(`login:${ip}`, { maxRequests: 5, interval: 60 });
+    if (!allowed) {
+      return NextResponse.json(
+        { error: 'Too many requests. Try again later.' },
+        { status: 429 }
+      );
+    }
+
     const body = await request.json();
     const { email, password } = body;
 
@@ -68,8 +80,8 @@ async function authenticateUser(email: string, password: string): Promise<User |
         if(!isMatch) return null
         return { id: row.id, email: row.email }
     }catch(e){
-        console.log(e, 'server error')
+        console.error('Login error:', e)
+        throw e
     }
-return null
 
 }

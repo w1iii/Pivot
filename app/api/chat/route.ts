@@ -1,8 +1,14 @@
 import Groq from "groq-sdk";
 import { NextResponse } from "next/server";
+import { getCurrentUser } from '../../lib/auth/jwt';
 
 export async function POST(req: Request) {
   try {
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { message }: { message: string } = await req.json();
 
     if (!message) {
