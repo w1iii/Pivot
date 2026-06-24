@@ -31,6 +31,8 @@ Personal stock tracking dashboard with AI-powered analysis.
 
 ## Getting Started
 
+> **Note:** Stock data requires an [Alpha Vantage API key](https://www.alphavantage.co/support/#api-key). Dashboard works with mock data by default — real data loads only when `ALPHA_VANTAGE_KEY` is set.
+
 ### Prerequisites
 
 - Node.js 18+

@@ -1,11 +1,9 @@
 const required = [
   'JWT_SECRET',
   'DATABASE_URL',
-  'ALPHA_VANTAGE_KEY',
-  'GROQ_API_KEY',
 ] as const;
 
-const optional = ['REDIS_URL', 'FREE_NEWS_API_KEY'];
+const optional = ['ALPHA_VANTAGE_KEY', 'GROQ_API_KEY', 'REDIS_URL', 'FREE_NEWS_API_KEY'];
 
 export function validateEnv(): void {
   const missing: string[] = [];
