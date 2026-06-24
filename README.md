@@ -1,43 +1,38 @@
 # Pivot
 
-Personal stock tracking dashboard with AI-powered analysis.
+Stock tracking dashboard with AI analysis, market overview, news, and secure auth.
 
-<img width="1440" height="810" alt="Screenshot 2026-03-03 at 9 31 37 PM" src="https://github.com/user-attachments/assets/caf76bce-e907-4fb6-a90e-03925e0f4373" />
-<img width="1440" height="810" alt="Screenshot 2026-03-03 at 9 32 40 PM" src="https://github.com/user-attachments/assets/5566a9ac-e799-45a3-8226-86f46bc77a03" />
-<img width="1439" height="811" alt="Screenshot 2026-03-03 at 9 32 08 PM" src="https://github.com/user-attachments/assets/e5ee8747-f72c-492b-a765-ec23e6050f09" />
-
-
-[![Next.js](https://img.shields.io/badge/Next.js-16-black)](https://nextjs.org)
-[![React](https://img.shields.io/badge/React-19-61DAFB)](https://react.dev)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5-blue)](https://www.typescriptlang.org)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-336791)](https://www.postgresql.org)
+> **Mock data note:** Dashboard works fully with mock data — real data requires API keys for Alpha Vantage, Groq, and FreeNewsAPI. See [.env.example](.env.example).
 
 ## Features
 
-- **User Authentication** - Secure signup and login with JWT-based authentication
-- **Personal Watchlist** - Create and manage your custom stock watchlist
-- **Real-time Data** - Track stock prices, changes, and market statistics
-- **Interactive Charts** - Visualize stock performance with dynamic price charts
-- **AI Stock Analyst** - Get AI-powered insights and analysis for any stock (powered by Groq)
+### Core
+- **Stock API** — Real-time quotes, history, overview, and batch lookup via Alpha Vantage. Interactive price charts per symbol.
+- **AI Stock Analyst** — Chat with Groq-powered AI for stock insights, trends, and analysis.
+- **Market Overview** — VIX, SPY tracking, aggregate portfolio growth, buy pressure, retail sentiment.
+- **Real-time News** — Stock news feed with detail enrichment via FreeNewsAPI.
+- **Watchlist** — Personalized stock watchlist with quick symbol lookup and removal.
+
+### Platform
+- **JWT Auth** — Secure signup/login, httpOnly cookies, rate-limited endpoints.
+- **Dashboard** — Portfolio view, market page, news feed, settings — all behind auth gate.
+- **Redis Cache** — Speeds up stock/news/market responses, falls back gracefully when unavailable.
 
 ## Tech Stack
 
 - **Frontend:** Next.js 16, React 19, TypeScript, Tailwind CSS
-- **Backend:** Next.js API Routes
-- **Database:** PostgreSQL
-- **Cache:** Redis
-- **Authentication:** JWT (jose)
+- **Backend:** Next.js API Routes, PostgreSQL, Redis
+- **Auth:** JWT (jose) + bcrypt
 - **AI:** Groq SDK
+- **News:** FreeNewsAPI
 
 ## Getting Started
-
-> **Note:** Stock data requires an [Alpha Vantage API key](https://www.alphavantage.co/support/#api-key). Dashboard works with mock data by default — real data loads only when `ALPHA_VANTAGE_KEY` is set.
 
 ### Prerequisites
 
 - Node.js 18+
 - PostgreSQL
-- Redis
+- Redis (optional — app runs without it)
 
 ### Installation
 
@@ -59,57 +54,63 @@ cp .env.example .env.local
 
 4. Configure your `.env.local` with the following variables:
 ```env
-# Database
+# Required
 DATABASE_URL=postgresql://user:password@localhost:5432/pivot
-
-# Redis
-REDIS_URL=redis://localhost:6379
-
-# JWT
 JWT_SECRET=your-jwt-secret-key
 
-# AI (Groq)
+# Required for live data (mock data used if unset)
+ALPHA_VANTAGE_KEY=your-alpha-vantage-key
 GROQ_API_KEY=your-groq-api-key
+
+# Optional
+REDIS_URL=redis://localhost:6379
+FREE_NEWS_API_KEY=your-freenewsapi-key
 ```
 
 5. Initialize the database:
 ```bash
-# Run database migrations/schema as per your setup
+psql "<DATABASE_URL>" < schema.sql
 ```
 
-### Running the App
-
-Start the development server:
+6. Start the dev server:
 ```bash
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+Open [http://localhost:3000](http://localhost:3000).
 
 ## API Endpoints
 
 ### Authentication
-- `POST /api/signup` - Create a new account
-- `POST /api/login` - Login and receive JWT
-- `POST /api/logout` - Logout and clear session
-- `GET /api/me` - Get current user info
+- `POST /api/signup` — Create account
+- `POST /api/login` — Login, get JWT cookie
+- `POST /api/logout` — Clear session
+- `GET /api/me` — Current user info
 
 ### Stocks
-- `GET /api/stock?symbol=<SYMBOL>` - Get stock data for a symbol
-- `POST /api/stock/batch` - Get stock data for multiple symbols
+- `GET /api/stock?symbol=<SYMBOL>` — Real-time quote
+- `POST /api/stock/batch` — Batch quotes
+- `GET /api/stock/history?symbol=<SYMBOL>` — Price history
+- `GET /api/stock/overview?symbol=<SYMBOL>` — Company overview
+
+### Market
+- `GET /api/market` — VIX, SPY, portfolio aggregate growth, sentiment
 
 ### Watchlist
-- `GET /api/watchlist` - Get user's watchlist
-- `POST /api/watchlist` - Add stock to watchlist
-- `DELETE /api/watchlist` - Remove stock from watchlist
+- `GET /api/watchlist` — User's watchlist
+- `POST /api/watchlist` — Add symbol
+- `DELETE /api/watchlist` — Remove symbol
 
-### AI Chat
-- `POST /api/chat` - Chat with AI stock analyst
+### AI
+- `POST /api/chat` — Chat with stock analyst AI
+
+### News
+- `GET /api/news` — Stock news feed (topic, country, language filters)
 
 ## License
 
-MIT License
+MIT
 
 ## Author
 
-Lui Franz Lomugdang - lomugdanglf.19@gmail.com
+Lui Franz Lomugdang — lomugdanglf.19@gmail.com
