@@ -5,7 +5,7 @@ const required = [
   'GROQ_API_KEY',
 ] as const;
 
-const optional = ['REDIS_URL'];
+const optional = ['REDIS_URL', 'FREE_NEWS_API_KEY'];
 
 export function validateEnv(): void {
   const missing: string[] = [];

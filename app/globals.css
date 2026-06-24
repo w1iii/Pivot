@@ -100,3 +100,11 @@ input:focus {
 .material-symbols-outlined {
   font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
 }
+
+.font-data-mono {
+  font-family: "SF Mono", "Monaco", "Inconsolata", "Fira Code", monospace;
+}
+
+.text-data-mono {
+  font-family: "SF Mono", "Monaco", "Inconsolata", "Fira Code", monospace;
+}

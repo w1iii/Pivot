@@ -6,6 +6,8 @@ import { useAuth } from '../contexts/AuthContext';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [showDropdown, setShow] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showNotifications, setShowNotifications] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
   const { user } = useAuth();
@@ -26,9 +28,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const navItems = [
     { href: '/dashboard', icon: 'trending_up', label: 'Market', match: (p: string) => p === '/dashboard' || p.startsWith('/dashboard/market') },
-    { href: '#', icon: 'newspaper', label: 'News', match: () => false },
-    { href: '#', icon: 'pie_chart', label: 'Portfolio', match: () => false },
+    { href: '/dashboard/news', icon: 'newspaper', label: 'News', match: (p: string) => p.startsWith('/dashboard/news') },
+    { href: '/dashboard/portfolio', icon: 'pie_chart', label: 'Portfolio', match: (p: string) => p.startsWith('/dashboard/portfolio') },
   ];
+
+  const handleSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && searchQuery.trim()) {
+      router.push(`/dashboard/watchlist/${searchQuery.trim().toUpperCase()}`);
+      setSearchQuery('');
+    }
+  };
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -59,7 +68,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <div className="mt-auto border-t border-outline-variant pt-4 pb-8">
           <ul className="space-y-1">
             <li>
-              <a className="flex items-center px-6 py-3 text-on-surface-variant hover:bg-surface-container transition-all" href="#">
+              <a
+                onClick={(e) => { e.preventDefault(); router.push('/support'); }}
+                className="flex items-center px-6 py-3 text-on-surface-variant hover:bg-surface-container transition-all cursor-pointer"
+              >
                 <span className="material-symbols-outlined mr-4 text-[20px]">help</span>
                 <span className="text-label-md text-label-md">Support</span>
               </a>
@@ -79,13 +91,31 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <div className="flex items-center space-x-6">
             <div className="flex items-center bg-surface-container-low px-4 py-1.5 rounded-full border border-outline-variant w-80">
               <span className="material-symbols-outlined text-on-surface-variant text-sm mr-2">search</span>
-              <input className="bg-transparent border-none focus:ring-0 text-label-md font-label-md w-full placeholder:text-on-surface-variant/50" placeholder="Search markets..." type="text" />
+              <input
+                className="bg-transparent border-none focus:ring-0 text-label-md font-label-md w-full placeholder:text-on-surface-variant/50"
+                placeholder="Search markets..."
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={handleSearch}
+              />
             </div>
           </div>
           <div className="flex items-center space-x-6">
-            <button className="text-on-surface-variant hover:text-primary transition-colors cursor-pointer">
-              <span className="material-symbols-outlined">notifications</span>
-            </button>
+            <div className="relative">
+              <button
+                onClick={() => setShowNotifications(!showNotifications)}
+                className="text-on-surface-variant hover:text-primary transition-colors cursor-pointer"
+              >
+                <span className="material-symbols-outlined">notifications</span>
+                <span className="absolute -top-1 -right-1 w-2 h-2 bg-error rounded-full"></span>
+              </button>
+              {showNotifications && (
+                <div className="absolute right-0 mt-2 w-80 bg-surface-container border border-outline-variant rounded-lg shadow-lg z-50 py-4 px-4">
+                  <p className="text-label-sm text-on-surface-variant text-center">No new notifications</p>
+                </div>
+              )}
+            </div>
             <button
               onClick={() => router.push('/dashboard/settings')}
               className="text-on-surface-variant hover:text-primary transition-colors cursor-pointer"

@@ -51,11 +51,8 @@ const handleSubmit = async(e: React.FormEvent) => {
       <main className="flex-grow flex items-center justify-center px-4 md:px-16 py-12">
         <div className="max-w-[1200px] w-full grid grid-cols-1 lg:grid-cols-2 gap-6 items-center bg-surface-container-lowest editorial-shadow rounded-xl overflow-hidden border border-outline-variant">
           <div className="hidden lg:block h-[700px] relative overflow-hidden bg-primary-container">
-            <img
-              alt="System Reference"
-              className="absolute inset-0 w-full h-full object-cover opacity-60 mix-blend-overlay"
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuAkbPz4KGW0MYWv7bCtWhJ2v6JK-zIF1TdA4PYni1__ZXqBmoC7jQ5Nddbbae2cL4Ya8aEN1c5OaXGJ4TCT1fiRHiu0SangBqjDZAB6gb7L64ZiJOiWwYNwkmAqG_BPVQRC3b7JWGXlr3P81wNbe7O5Wu1mMfsyAlyuwViEzjHoxRnkb_GYvJCJk0h8Pk8wTDffonKTmvGR57GvBomRhcU1JP0GjatW9JUTzVTRsSuTK-kR9lPZReznhwH2ZivPYSH-hwOa2GLYILQ"
-            />
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-primary-container to-surface-container-low" />
+            <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 25px 25px, currentColor 1px, transparent 0)', backgroundSize: '50px 50px' }} />
             <div className="absolute inset-0 bg-gradient-to-t from-background/90 to-transparent"></div>
             <div className="absolute bottom-12 left-12 right-12 text-on-primary-container">
               <h2 className="text-headline-xl font-headline-xl mb-4">Precision Analysis for Institutional Assets.</h2>
@@ -210,13 +207,13 @@ const handleSubmit = async(e: React.FormEvent) => {
       <footer className="px-4 md:px-16 py-2 border-t border-outline-variant bg-surface">
         <div className="max-w-[1280px] mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="flex items-center gap-6">
-            <span className="text-label-sm text-outline">© 2024 PIVOT INSTITUTIONAL</span>
+            <span className="text-label-sm text-outline">© {new Date().getFullYear()} PIVOT INSTITUTIONAL</span>
             <span className="text-label-sm text-outline">SEC/FINRA REGISTERED</span>
           </div>
           <div className="flex gap-4">
-            <a className="text-label-sm text-outline hover:text-primary transition-colors uppercase tracking-widest" href="#">Legal</a>
-            <a className="text-label-sm text-outline hover:text-primary transition-colors uppercase tracking-widest" href="#">Privacy</a>
-            <a className="text-label-sm text-outline hover:text-primary transition-colors uppercase tracking-widest" href="#">Security</a>
+            <a className="text-label-sm text-outline hover:text-primary transition-colors uppercase tracking-widest cursor-pointer" onClick={() => alert('Legal information coming soon.')}>Legal</a>
+            <a className="text-label-sm text-outline hover:text-primary transition-colors uppercase tracking-widest cursor-pointer" onClick={() => alert('Privacy policy coming soon.')}>Privacy</a>
+            <a className="text-label-sm text-outline hover:text-primary transition-colors uppercase tracking-widest cursor-pointer" onClick={() => alert('Security information coming soon.')}>Security</a>
           </div>
         </div>
       </footer>

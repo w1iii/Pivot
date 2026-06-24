@@ -9,7 +9,8 @@ export async function GET() {
   try {
     await pool.query('SELECT 1');
     checks.database = 'ok';
-  } catch {
+  } catch (err) {
+    console.error('Health check - database error:', err);
     checks.database = 'error';
     healthy = false;
   }
@@ -17,7 +18,8 @@ export async function GET() {
   try {
     await redis.ping();
     checks.redis = 'ok';
-  } catch {
+  } catch (err) {
+    console.error('Health check - Redis error:', err);
     checks.redis = 'error';
     healthy = false;
   }

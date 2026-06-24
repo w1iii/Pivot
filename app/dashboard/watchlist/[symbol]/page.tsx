@@ -3,76 +3,8 @@
 import { useState, useRef, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useParams, useRouter } from 'next/navigation';
-
-interface StockDetail {
-  symbol: string;
-  name: string;
-  price: number;
-  priceChange: number;
-  changePercent: number;
-  statistics: { [key: string]: string | number };
-  chartData: number[];
-}
-
-function buildStockDetail(symbol: string, data: Record<string, string>): StockDetail {
-  const avgVol = data.avgVolume
-    ? `${(parseFloat(data.avgVolume) / 1_000_000).toFixed(2)}M`
-    : 'N/A';
-  const mktCap = data.marketCap
-    ? `$${(parseFloat(data.marketCap) / 1_000_000_000).toFixed(2)}B`
-    : 'N/A';
-
-  return {
-    symbol,
-    name: symbol,
-    price: parseFloat(data.price) || 0,
-    priceChange: parseFloat(data.change) || 0,
-    changePercent: parseFloat(data.changePercent) || 0,
-    statistics: {
-      'Open': parseFloat(data.open)?.toFixed(2) || '0.00',
-      'High': parseFloat(data.high)?.toFixed(2) || '0.00',
-      'Low': parseFloat(data.low)?.toFixed(2) || '0.00',
-      'Volume': data.volume ? `${(parseFloat(data.volume) / 1000000).toFixed(2)}M` : '0',
-      'Avg Volume': avgVol,
-      'Market Cap': mktCap,
-    },
-    chartData: Array.from({ length: 50 }, (_, i) =>
-      symbol.charCodeAt(0) * 2 + (i * 3)
-    ),
-  };
-}
-
-const COMPANY_NAMES: Record<string, string> = {
-  'AAPL': 'Apple Inc.',
-  'GOOGL': 'Alphabet Inc.',
-  'GOOG': 'Alphabet Inc.',
-  'MSFT': 'Microsoft Corporation',
-  'AMZN': 'Amazon.com Inc.',
-  'META': 'Meta Platforms Inc.',
-  'TSLA': 'Tesla Inc.',
-  'NVDA': 'NVIDIA Corporation',
-  'JPM': 'JPMorgan Chase & Co.',
-  'V': 'Visa Inc.',
-  'SPY': 'SPDR S&P 500 ETF',
-  'QQQ': 'Invesco QQQ Trust',
-};
-
-const LOGO_COLORS = [
-  'bg-primary',
-  'bg-secondary-container',
-  'bg-surface-container-highest',
-  'bg-tertiary-container',
-  'bg-error-container',
-  'bg-secondary',
-];
-
-function getLogoColor(symbol: string): string {
-  let hash = 0;
-  for (let i = 0; i < symbol.length; i++) {
-    hash = symbol.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  return LOGO_COLORS[Math.abs(hash) % LOGO_COLORS.length];
-}
+import { getLogoColor, buildStockDetail, COMPANY_NAMES } from '../../../lib/stock-utils';
+import type { StockDetail } from '../../../lib/stock-utils';
 
 export default function WatchlistDetail() {
   const params = useParams();
@@ -90,6 +22,26 @@ export default function WatchlistDetail() {
     queryFn: async () => {
       const res = await fetch(`/api/stock?symbol=${symbol}`);
       if (!res.ok) throw new Error('Failed to fetch stock data');
+      return res.json();
+    },
+    enabled: !!symbol,
+  });
+
+  const { data: chartHistory } = useQuery({
+    queryKey: ['chart', symbol],
+    queryFn: async () => {
+      const res = await fetch(`/api/stock/history?symbol=${symbol}`);
+      if (!res.ok) throw new Error('Failed to fetch chart');
+      return res.json();
+    },
+    enabled: !!symbol,
+  });
+
+  const { data: overview } = useQuery({
+    queryKey: ['overview', symbol],
+    queryFn: async () => {
+      const res = await fetch(`/api/stock/overview?symbol=${symbol}`);
+      if (!res.ok) return null;
       return res.json();
     },
     enabled: !!symbol,
@@ -224,8 +176,8 @@ export default function WatchlistDetail() {
               ))}
             </div>
             <div className="flex gap-2">
-              <button className="material-symbols-outlined text-on-surface-variant p-1.5 border border-outline-variant hover:bg-surface-container transition-colors">show_chart</button>
-              <button className="material-symbols-outlined text-on-surface-variant p-1.5 border border-outline-variant hover:bg-surface-container transition-colors">fullscreen</button>
+              <button onClick={() => setTimeframe(timeframe === '1Y' ? 'ALL' : '1Y')} className="material-symbols-outlined text-on-surface-variant p-1.5 border border-outline-variant hover:bg-surface-container transition-colors">show_chart</button>
+              <button onClick={() => { const el = document.documentElement; if (document.fullscreenElement) { document.exitFullscreen(); } else { el.requestFullscreen(); } }} className="material-symbols-outlined text-on-surface-variant p-1.5 border border-outline-variant hover:bg-surface-container transition-colors">fullscreen</button>
             </div>
           </div>
 
@@ -242,16 +194,24 @@ export default function WatchlistDetail() {
                   <stop offset="100%" stopColor={lineColor} stopOpacity="0" />
                 </linearGradient>
               </defs>
-              <path
-                d="M0,350 L100,340 L200,360 L300,320 L400,280 L500,290 L600,240 L700,260 L800,210 L900,180 L1000,160 V400 H0 Z"
-                fill={`url(#${lineGradientId})`}
-              />
-              <path
-                d="M0,350 L100,340 L200,360 L300,320 L400,280 L500,290 L600,240 L700,260 L800,210 L900,180 L1000,160"
-                fill="none"
-                stroke={lineColor}
-                strokeWidth="2.5"
-              />
+              {chartHistory?.prices?.length > 1 ? (() => {
+                const pts = chartHistory.prices;
+                const w = 1000;
+                const h = 400;
+                const step = w / (pts.length - 1);
+                const line = pts.map((p: { y: number }, i: number) => `${i === 0 ? 'M' : 'L'} ${i * step},${(p.y / 200) * h}`).join(' ');
+                return (
+                  <>
+                    <path d={`${line} V${h} H0 Z`} fill={`url(#${lineGradientId})`} />
+                    <path d={line} fill="none" stroke={lineColor} strokeWidth="2.5" />
+                  </>
+                );
+              })() : (
+                <>
+                  <path d="M0,300 L1000,300" fill="none" stroke={lineColor} strokeWidth="2.5" opacity="0.3" />
+                  <path d="M0,300 L1000,300 V400 H0 Z" fill={`url(#${lineGradientId})`} opacity="0.3" />
+                </>
+              )}
             </svg>
             {/* Tooltip */}
             <div className="absolute top-[40%] flex flex-col items-center" style={{ left: `${tooltipX}%` }}>
@@ -351,27 +311,27 @@ export default function WatchlistDetail() {
                     d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                     fill="none"
                     stroke="#b3c5ff"
-                    strokeDasharray="82, 100"
+                    strokeDasharray={`${overview?.analystCount ? Math.min(overview.analystCount * 10, 100).toString() : '82'}, 100`}
                     strokeWidth="3"
                   />
                 </svg>
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="font-data-mono text-headline-md text-headline-md text-on-surface">82%</span>
+                  <span className="font-data-mono text-headline-md text-headline-md text-on-surface">{overview?.analystCount ? `${overview.analystCount}` : '—'}</span>
                 </div>
               </div>
               <div className="flex flex-col gap-1">
-                <span className="text-on-surface font-bold text-label-md">Strong Buy</span>
-                <p className="text-label-sm text-label-sm text-on-surface-variant">Based on 45 analyst recommendations from major institutions.</p>
+                <span className="text-on-surface font-bold text-label-md">{overview?.analystRating ? overview.analystRating.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()) : 'N/A'}</span>
+                <p className="text-label-sm text-label-sm text-on-surface-variant">Based on {overview?.analystCount || '—'} analyst recommendations from major institutions.</p>
               </div>
             </div>
             <div className="space-y-4 pt-4 border-t border-outline-variant">
               <div className="flex justify-between items-center">
                 <span className="text-label-md text-label-md text-on-surface-variant">Price Target (Avg)</span>
-                <span className="font-data-mono text-on-surface">$195.00</span>
+                <span className="font-data-mono text-on-surface">{overview?.analystTargetPrice ? `$${overview.analystTargetPrice.toFixed(2)}` : '—'}</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-label-md text-label-md text-on-surface-variant">Institutions Holding</span>
-                <span className="font-data-mono text-on-surface">78.4%</span>
+                <span className="font-data-mono text-on-surface">{overview?.percentInstitutions ? `${overview.percentInstitutions.toFixed(1)}%` : '—'}</span>
               </div>
             </div>
           </div>

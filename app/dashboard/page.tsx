@@ -4,6 +4,18 @@ import { useState } from 'react';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation'
 import { useAuth } from '../contexts/AuthContext';
+import { getLogoColor, buildStockDetail } from '../lib/stock-utils';
+import type { StockDetail } from '../lib/stock-utils';
+
+interface NewsArticle {
+  uuid: string;
+  title: string;
+  description: string;
+  published_at: string;
+  publisher: string;
+  url: string;
+  thumbnail?: string;
+}
 
 interface Stock {
   id: string;
@@ -11,63 +23,6 @@ interface Stock {
   price: number;
   change: number;
   changePercent: number;
-}
-
-interface StockDetail {
-  symbol: string;
-  name: string;
-  price: number;
-  priceChange: number;
-  changePercent: number;
-  statistics: {
-    [key: string]: string | number;
-  };
-  chartData: number[];
-}
-
-const LOGO_COLORS = [
-  'bg-primary',
-  'bg-secondary-container',
-  'bg-surface-container-highest',
-  'bg-tertiary-container',
-  'bg-error-container',
-  'bg-secondary',
-];
-
-function getLogoColor(symbol: string): string {
-  let hash = 0;
-  for (let i = 0; i < symbol.length; i++) {
-    hash = symbol.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  return LOGO_COLORS[Math.abs(hash) % LOGO_COLORS.length];
-}
-
-function buildStockDetail(symbol: string, data: Record<string, string>): StockDetail {
-  const avgVol = data.avgVolume
-    ? `${(parseFloat(data.avgVolume) / 1_000_000).toFixed(2)}M`
-    : 'N/A';
-  const mktCap = data.marketCap
-    ? `$${(parseFloat(data.marketCap) / 1_000_000_000).toFixed(2)}B`
-    : 'N/A';
-
-  return {
-    symbol,
-    name: symbol,
-    price: parseFloat(data.price) || 0,
-    priceChange: parseFloat(data.change) || 0,
-    changePercent: parseFloat(data.changePercent) || 0,
-    statistics: {
-      'Open': parseFloat(data.open)?.toFixed(2) || '0.00',
-      'High': parseFloat(data.high)?.toFixed(2) || '0.00',
-      'Low': parseFloat(data.low)?.toFixed(2) || '0.00',
-      'Volume': data.volume ? `${(parseFloat(data.volume) / 1000000).toFixed(2)}M` : '0',
-      'Avg Volume': avgVol,
-      'Market Cap': mktCap,
-    },
-    chartData: Array.from({ length: 50 }, (_, i) =>
-      symbol.charCodeAt(0) * 2 + (i * 3)
-    ),
-  };
 }
 
 const Dashboard: React.FC = () => {
@@ -131,6 +86,25 @@ const Dashboard: React.FC = () => {
     enabled: !!user?.id && !authLoading,
   });
 
+  const { data: marketData } = useQuery({
+    queryKey: ['market'],
+    queryFn: async () => {
+      const res = await fetch('/api/market');
+      if (!res.ok) throw new Error('Failed to fetch market data');
+      return res.json();
+    },
+  });
+
+  const { data: chartHistory } = useQuery({
+    queryKey: ['chart', symbol],
+    queryFn: async () => {
+      const res = await fetch(`/api/stock/history?symbol=${symbol}`);
+      if (!res.ok) throw new Error('Failed to fetch chart');
+      return res.json();
+    },
+    enabled: !!symbol,
+  });
+
   const addStockMutation = useMutation({
     mutationFn: async (upper: string) => {
       const res = await fetch(`/api/stock?symbol=${upper}`);
@@ -184,7 +158,8 @@ const Dashboard: React.FC = () => {
             { type: "ai", text: `Error: ${data.error}` },
           ]);
         }
-      } catch {
+      } catch (err) {
+        console.error('AI chat error:', err);
         setMessages((prev) => [
           ...prev,
           { type: "ai", text: "Failed to get response from AI." },
@@ -230,11 +205,11 @@ const Dashboard: React.FC = () => {
             <div className="flex justify-between items-end mb-12">
               <div>
                 <h2 className="text-headline-xl font-headline-xl text-on-surface mb-2">Market Overview</h2>
-                <p className="text-body-lg text-body-lg text-on-surface-variant max-w-2xl opacity-80">Strategic insights and institutional data streams. Current market sentiment is cautiously bullish as quarterly reports materialize.</p>
+                <p className="text-body-lg text-body-lg text-on-surface-variant max-w-2xl opacity-80">Strategic insights and institutional data streams. Current market sentiment is {marketData?.vix < 20 ? 'stable' : marketData?.vix < 30 ? 'cautious' : 'elevated'} with real-time price action across major indices.</p>
               </div>
               <div className="text-right">
                 <div className="text-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest mb-1">Last Update</div>
-                <div className="text-label-md text-label-md text-primary">14:23:45 EST — JUL 24</div>
+                <div className="text-label-md text-label-md text-primary">{new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', timeZone: 'America/New_York' })} EST — {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase()}</div>
               </div>
             </div>
 
@@ -247,9 +222,8 @@ const Dashboard: React.FC = () => {
                     <p className="text-label-md text-label-md text-on-surface-variant">Real-time volatility analysis</p>
                   </div>
                   <div className="flex space-x-2">
-                    <span className="px-3 py-1 bg-primary/10 text-primary text-label-sm text-label-sm rounded-full">S&amp;P 500</span>
-                    <span className="px-3 py-1 border border-outline-variant text-on-surface-variant text-label-sm text-label-sm rounded-full">NASDAQ</span>
-                    <span className="px-3 py-1 border border-outline-variant text-on-surface-variant text-label-sm text-label-sm rounded-full">DOW</span>
+                    <span className="px-3 py-1 bg-primary/10 text-primary text-label-sm text-label-sm rounded-full">S&amp;P 500 {marketData?.spyChange ? `${marketData.spyChange >= 0 ? '+' : ''}${marketData.spyChange.toFixed(2)}%` : ''}</span>
+                    <span className="px-3 py-1 border border-outline-variant text-on-surface-variant text-label-sm text-label-sm rounded-full">VIX {marketData?.vix ?? '—'}</span>
                   </div>
                 </div>
 
@@ -263,7 +237,7 @@ const Dashboard: React.FC = () => {
                         <circle cx="128" cy="128" fill="transparent" r="90" stroke="currentColor" strokeDasharray="565" strokeDashoffset="200" strokeWidth="8" className="text-secondary transition-all duration-1000"></circle>
                       </svg>
                       <div className="text-center">
-                        <div className="text-headline-xl font-headline-xl text-on-surface leading-none">+2.4<span className="text-headline-md">%</span></div>
+                        <div className="text-headline-xl font-headline-xl text-on-surface leading-none">{marketData ? `${marketData.aggregateGrowth >= 0 ? '+' : ''}${marketData.aggregateGrowth}%`.replace('+', '') : '—'}<span className="text-headline-md">%</span></div>
                         <div className="text-label-sm text-label-sm text-on-surface-variant uppercase mt-2 tracking-tighter">Aggregate Growth</div>
                       </div>
                     </div>
@@ -272,35 +246,35 @@ const Dashboard: React.FC = () => {
                     <div>
                       <div className="flex justify-between text-label-md text-label-md mb-2 text-on-surface">
                         <span>Institutional Buy Pressure</span>
-                        <span className="text-primary">84%</span>
+                        <span className="text-primary">{marketData?.buyPressure || '—'}%</span>
                       </div>
                       <div className="w-full h-1 bg-surface-container-highest overflow-hidden">
-                        <div className="h-full bg-primary w-[84%] transition-all duration-1000"></div>
+                        <div className="h-full bg-primary transition-all duration-1000" style={{ width: `${marketData?.buyPressure || 0}%` }}></div>
                       </div>
                     </div>
                     <div>
                       <div className="flex justify-between text-label-md text-label-md mb-2 text-on-surface">
                         <span>Retail Sentiment</span>
-                        <span className="text-secondary">62%</span>
+                        <span className="text-secondary">{marketData?.retailSentiment || '—'}%</span>
                       </div>
                       <div className="w-full h-1 bg-surface-container-highest overflow-hidden">
-                        <div className="h-full bg-secondary w-[62%] transition-all duration-1000"></div>
+                        <div className="h-full bg-secondary transition-all duration-1000" style={{ width: `${marketData?.retailSentiment || 0}%` }}></div>
                       </div>
                     </div>
                     <div>
                       <div className="flex justify-between text-label-md text-label-md mb-2 text-on-surface">
                         <span>Volatility Index (VIX)</span>
-                        <span className="text-tertiary">14.2</span>
+                        <span className="text-tertiary">{marketData?.vix ?? '—'}</span>
                       </div>
                       <div className="w-full h-1 bg-surface-container-highest overflow-hidden">
-                        <div className="h-full bg-tertiary w-[14%] transition-all duration-1000"></div>
+                        <div className="h-full bg-tertiary transition-all duration-1000" style={{ width: `${Math.min(marketData?.vix || 0, 100)}%` }}></div>
                       </div>
                     </div>
                   </div>
                 </div>
 
                 <div className="absolute -right-20 -bottom-20 opacity-5 pointer-events-none group-hover:opacity-10 transition-opacity">
-                  <img className="w-[400px] object-cover grayscale" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDmH7ewCZTtJb3GWj1WsBLx-wJKzoizqhIrPfSL2GVALylFjFjGj5BL8nhtJTuuchMqFvGNkSV8HWRyvlt0H8qnKxU1Oyx6ipLBWCe-h3R8wOmSudgX8FfTG8xsvz2YNxG59lStBAQvaDISSWJl3CWOxXktro7n_erTt7QwQfdmVFsDVkbhyoKiFwcAguFBW0GeUvJZeW0yeT9z4Js1y0a23ACmuajw3XoYRHoo2vXwuQS4BVEgjIk-Nxvvl6k_1CSQbG_jnuJQ_Xw" alt="" />
+                  <div className="w-[400px] h-[400px] bg-gradient-to-br from-primary/30 to-transparent rounded-full blur-3xl" />
                 </div>
               </div>
 
@@ -364,7 +338,7 @@ const Dashboard: React.FC = () => {
                           </div>
                           <div>
                             <div className="text-label-md text-on-surface">{stock.symbol}</div>
-                            <div className="text-[10px] text-on-surface-variant uppercase">Market</div>
+                            <div className="text-[10px] text-on-surface-variant uppercase">NASDAQ</div>
                           </div>
                         </div>
                         <div className="text-right">
@@ -402,35 +376,13 @@ const Dashboard: React.FC = () => {
             <div className="col-span-12 lg:col-span-7 bg-surface-container border border-outline-variant p-8 rounded">
               <div className="flex justify-between items-center mb-8">
                 <h3 className="text-headline-md font-headline-md text-on-surface">Strategic Intelligence</h3>
-                <a className="text-primary text-label-md text-label-md flex items-center hover:underline" href="#">
+                <a className="text-primary text-label-md text-label-md flex items-center hover:underline cursor-pointer" onClick={() => router.push('/dashboard/news')}>
                   Explore All News
                   <span className="material-symbols-outlined text-sm ml-1">arrow_forward</span>
                 </a>
               </div>
-              <div className="space-y-10">
-                <article className="flex gap-6 group cursor-pointer">
-                  <div className="w-24 h-24 flex-shrink-0 bg-surface-container-low overflow-hidden rounded">
-                    <img className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAc2xbHAD0i1xmik_H-g5GFU8FjazhlBce50vdYEEUWCOCU8NlwNX9GZlkNMzS_Au93PLOokbzRDlovC2Hi0ko_nQnGX1r2lpXpNXnEUZFjCbS2qSuAm1QReM7EEoD_21XPTU7RfW5cm7rnUSCY4-ColgabeL6LUnhA6Mz9pD-1-Z68AmG1xTxVXch8d-FVcd6rEEalyn9_CRuKpqBBk7SRNRIAM3pTA0DT9p9Iv7rwf1Hu4cw-oKXt8lcyy6Yf2SRLaT4WceCAF8Y" alt="" />
-                  </div>
-                  <div>
-                    <span className="text-label-sm text-label-sm text-primary font-bold uppercase tracking-wider">Monetary Policy</span>
-                    <h4 className="text-headline-md font-headline-md text-on-surface mt-1 group-hover:text-primary transition-colors">FED signals potential pause in rate hikes for upcoming Q3 sessions</h4>
-                    <p className="text-body-md text-body-md text-on-surface-variant mt-2 line-clamp-2 opacity-80">Recent economic data suggests a softening in labor demand, prompting analysts to project a more dovish stance from central banks globally.</p>
-                  </div>
-                </article>
-                <article className="flex gap-6 group cursor-pointer">
-                  <div className="w-24 h-24 flex-shrink-0 bg-surface-container-low overflow-hidden rounded">
-                    <img className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAibOxsbCgW72mAaK8ew5Sdgkaf2EhvSeGJ5kMpSexkarlQm7tevwxsaJSoR0vx3cjWy899WgbGiCtkBVDdXOEV0fVRcmtBSMAHD0lCrS_-kzntwz0uT7TXwGeb9tv1WqpmeQem_R05kSOjyq0rWxK6i_NEMtfUcsB-WU84_j22GHwZ60Y0mEaWz8BYogehFgRBBm5jtGHjMyAPS-7mPx0ncLFZaNqoje1CPhr1uw1IQRuIdMqtyEYn64N-U2SL5Ej1K_T7M-5Ky6g" alt="" />
-                  </div>
-                  <div>
-                    <span className="text-label-sm text-label-sm text-primary font-bold uppercase tracking-wider">Tech Sector</span>
-                    <h4 className="text-headline-md font-headline-md text-on-surface mt-1 group-hover:text-primary transition-colors">Semiconductor demand surges as AI infrastructure enters second phase</h4>
-                    <p className="text-body-md text-body-md text-on-surface-variant mt-2 line-clamp-2 opacity-80">The global supply chain prepares for a significant increase in production capacity to meet the demands of enterprise-level AI deployments.</p>
-                  </div>
-                </article>
-              </div>
+              <NewsFeed />
             </div>
-
             <div className="col-span-12 lg:col-span-5 bg-surface-container-high border border-outline-variant p-8 rounded">
               <h3 className="text-headline-md font-headline-md text-on-surface mb-8">Asset Allocation</h3>
               <div className="space-y-6">
@@ -542,20 +494,23 @@ const Dashboard: React.FC = () => {
                     <stop offset="100%" stopColor="#b3c5ff" stopOpacity="0.05" />
                   </linearGradient>
                 </defs>
-                <path
-                  d={`M 0,${200 - ((selectedStock.chartData[0] ?? 200) - 100)} ${selectedStock.chartData
-                    .map((point, i) => `L ${(i * 1200) / selectedStock.chartData.length},${200 - (point - 100)}`)
-                    .join(' ')}`}
-                  stroke="#b3c5ff"
-                  strokeWidth="2"
-                  fill="none"
-                />
-                <path
-                  d={`M 0,${200 - ((selectedStock.chartData[0] ?? 200) - 100)} ${selectedStock.chartData
-                    .map((point, i) => `L ${(i * 1200) / selectedStock.chartData.length},${200 - (point - 100)}`)
-                    .join(' ')} L 1200,200 L 0,200 Z`}
-                  fill="url(#chartGradient)"
-                />
+                {chartHistory?.prices?.length > 1 ? (() => {
+                  const pts = chartHistory.prices;
+                  const w = 1200;
+                  const step = w / (pts.length - 1);
+                  const line = pts.map((p: { y: number }, i: number) => `${i === 0 ? 'M' : 'L'} ${i * step},${p.y}`).join(' ');
+                  return (
+                    <>
+                      <path d={`${line} L ${(pts.length - 1) * step},256 L 0,256 Z`} fill="url(#chartGradient)" />
+                      <path d={line} stroke="#b3c5ff" strokeWidth="2" fill="none" />
+                    </>
+                  );
+                })() : (
+                  <>
+                    <path d="M0,200 L1200,200" stroke="#b3c5ff" strokeWidth="2" fill="none" opacity="0.3" />
+                    <path d="M0,200 L1200,200 L1200,256 L0,256 Z" fill="url(#chartGradient)" opacity="0.3" />
+                  </>
+                )}
               </svg>
             </div>
           </div>
@@ -619,5 +574,51 @@ const Dashboard: React.FC = () => {
     </div>
   );
 };
+
+function NewsFeed() {
+  const { data, isLoading } = useQuery<{ data: NewsArticle[] }>({
+    queryKey: ['news-feed'],
+    queryFn: async () => {
+      const res = await fetch('/api/news?q=stocks&in_title=stock&limit=4');
+      if (!res.ok) return { data: [] };
+      return res.json();
+    },
+  });
+
+  const articles = data?.data?.slice(0, 2) || [];
+  const fallbackArticles = [
+    { uuid: '1', title: 'Loading market intelligence...', published_at: '', publisher: '', url: '', description: '' },
+    { uuid: '2', title: 'Loading market intelligence...', published_at: '', publisher: '', url: '', description: '' },
+  ];
+  const display = isLoading ? fallbackArticles : articles;
+
+  const openArticle = (url: string) => {
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
+  return (
+    <div className="space-y-10">
+      {display.length === 0 ? (
+        <div className="text-center py-8">
+          <p className="text-body-md text-body-md text-on-surface-variant">No news available.</p>
+        </div>
+      ) : (
+        display.map((article, i) => (
+          <article key={article.uuid || i} onClick={() => article.url && openArticle(article.url)} className="flex gap-6 group cursor-pointer">
+            <div className="w-24 h-24 flex-shrink-0 bg-surface-container-low overflow-hidden rounded" />
+            <div>
+              <span className="text-label-sm text-label-sm text-primary font-bold uppercase tracking-wider">
+                {article.publisher || 'Markets'}
+              </span>
+              <h4 className="text-headline-md font-headline-md text-on-surface mt-1 group-hover:text-primary transition-colors">
+                {article.title}
+              </h4>
+            </div>
+          </article>
+        ))
+      )}
+    </div>
+  );
+}
 
 export default Dashboard;

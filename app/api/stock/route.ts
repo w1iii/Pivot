@@ -16,20 +16,12 @@ export async function GET(req: Request) {
 
   const cacheKey = `stock:${symbol.toUpperCase()}`;
 
-  console.log("=======================================")
-  console.log("Serving stock content from stock route")
-  console.log("=======================================")
-
   try {
-    // 🔥 1️⃣ Check Redis Cache First
     const cachedData = await redis.get(cacheKey);
 
     if (cachedData) {
-      console.log("Serving from Redis cache");
       return NextResponse.json(JSON.parse(cachedData));
     }
-
-    console.log("Fetching from Alpha Vantage API");
 
     const API_KEY = process.env.ALPHA_VANTAGE_KEY;
 
@@ -54,15 +46,17 @@ export async function GET(req: Request) {
       changePercent: data["Global Quote"]["10. change percent"],
     };
 
-    // 🔥 2️⃣ Store in Redis (stringify!)
-    await redis.set(cacheKey, JSON.stringify(formattedData), {
-      EX: DEFAULT_EXPIRATION,
-    });
+    try {
+      await redis.set(cacheKey, JSON.stringify(formattedData), {
+        EX: DEFAULT_EXPIRATION,
+      });
+    } catch {
+      // Redis unavailable, skip cache write
+    }
 
     return NextResponse.json(formattedData);
 
-  } catch (error) {
-    console.log(error);
+  } catch {
     return NextResponse.json(
       { error: "Failed to fetch stock data" },
       { status: 500 }

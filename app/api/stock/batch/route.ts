@@ -10,9 +10,6 @@ export async function POST(req: Request) {
   const userId = user.id;
 
   const { symbols } = await req.json();
-  console.log("============================================" )
-  console.log("From Backend Batch route symbols: ", symbols)
-  console.log("============================================" )
 
   if (!symbols || !Array.isArray(symbols)) {
     return NextResponse.json(
@@ -28,7 +25,6 @@ export async function POST(req: Request) {
   try {
     const cachedData = await redis.get(cacheKey);
     if(cachedData){
-      console.log("Serving from Redis cache (batch): ", cachedData);
       return NextResponse.json(JSON.parse(cachedData));
     }
     const API_KEY = process.env.ALPHA_VANTAGE_KEY;
@@ -82,7 +78,6 @@ export async function POST(req: Request) {
 
         // Check for API errors or rate limits
         if (!data["Global Quote"] || data["Global Quote"]["05. price"] === undefined) {
-          console.log(`Alpha Vantage error for ${symbol}:`, data);
           results[symbol] = { 
             error: data.Information || "No data available",
             price: 0,
@@ -103,8 +98,7 @@ export async function POST(req: Request) {
 
           results[symbol] = formattedData;
         }
-      } catch (error) {
-        console.log(`Error fetching ${symbol}:`, error);
+      } catch {
         results[symbol] = { error: "Failed to fetch", price: "0", change: "0", changePercent: "0" };
       }
 
@@ -118,16 +112,12 @@ export async function POST(req: Request) {
       await redis.set(cacheKey, JSON.stringify(results),{
         EX: DEFAULT_EXPIRATION,
       });
-    } catch (redisErr) {
-      console.log("Redis not available, skipping cache write:", redisErr);
+    } catch {
+      // Redis unavailable, skip cache write
     }
 
-    console.log("============================================" )
-    console.log("Results batch: ", results);
-    console.log("============================================" )
     return NextResponse.json(results);
-  } catch (error) {
-    console.log(error);
+  } catch {
     return NextResponse.json(
       { error: "Failed to fetch stock data" },
       { status: 500 }

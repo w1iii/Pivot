@@ -35,11 +35,8 @@ export default function Home() {
       <main className="flex-grow flex items-center justify-center px-4 md:px-16 py-12">
         <div className="max-w-[1200px] w-full grid grid-cols-1 lg:grid-cols-2 gap-6 items-center bg-surface-container-lowest editorial-shadow rounded-xl overflow-hidden border border-outline-variant">
           <div className="hidden lg:block h-[600px] relative overflow-hidden bg-primary-container">
-            <img
-              alt="System Reference"
-              className="absolute inset-0 w-full h-full object-cover opacity-60 mix-blend-overlay"
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuAkbPz4KGW0MYWv7bCtWhJ2v6JK-zIF1TdA4PYni1__ZXqBmoC7jQ5Nddbbae2cL4Ya8aEN1c5OaXGJ4TCT1fiRHiu0SangBqjDZAB6gb7L64ZiJOiWwYNwkmAqG_BPVQRC3b7JWGXlr3P81wNbe7O5Wu1mMfsyAlyuwViEzjHoxRnkb_GYvJCJk0h8Pk8wTDffonKTmvGR57GvBomRhcU1JP0GjatW9JUTzVTRsSuTK-kR9lPZReznhwH2ZivPYSH-hwOa2GLYILQ"
-            />
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-primary-container to-surface-container-low" />
+            <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 25px 25px, currentColor 1px, transparent 0)', backgroundSize: '50px 50px' }} />
             <div className="absolute inset-0 bg-gradient-to-t from-background/90 to-transparent"></div>
             <div className="absolute bottom-12 left-12 right-12 text-on-primary-container">
               <h2 className="text-headline-xl font-headline-xl mb-4">Precision Analysis for Institutional Assets.</h2>
@@ -77,7 +74,7 @@ export default function Home() {
                 <div className="group">
                   <div className="flex justify-between items-center mb-2">
                     <label className="block text-label-sm uppercase tracking-widest text-on-surface-variant" htmlFor="password">Password</label>
-                    <a className="text-primary text-label-sm hover:underline" href="#">Forgot password?</a>
+                    <a className="text-primary text-label-sm hover:underline cursor-pointer" onClick={(e) => { e.preventDefault(); alert('Password reset functionality coming soon.'); }}>Forgot password?</a>
                   </div>
                   <div className="relative">
                     <input
@@ -117,7 +114,7 @@ export default function Home() {
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
-                  <button type="button" className="flex items-center justify-center gap-2 border border-outline-variant py-3 rounded-lg text-label-md text-on-surface-variant hover:bg-surface-container-low transition-colors">
+                  <button type="button" onClick={() => alert('SSO integration coming soon.')} className="flex items-center justify-center gap-2 border border-outline-variant py-3 rounded-lg text-label-md text-on-surface-variant hover:bg-surface-container-low transition-colors">
                     <svg className="w-5 h-5" viewBox="0 0 24 24">
                       <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="currentColor"></path>
                       <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="currentColor"></path>
@@ -126,7 +123,7 @@ export default function Home() {
                     </svg>
                     SSO
                   </button>
-                  <button type="button" className="flex items-center justify-center gap-2 border border-outline-variant py-3 rounded-lg text-label-md text-on-surface-variant hover:bg-surface-container-low transition-colors">
+                  <button type="button" onClick={() => alert('Passkey authentication coming soon.')} className="flex items-center justify-center gap-2 border border-outline-variant py-3 rounded-lg text-label-md text-on-surface-variant hover:bg-surface-container-low transition-colors">
                     <span className="material-symbols-outlined text-[20px]">key</span>
                     Passkey
                   </button>
@@ -147,13 +144,13 @@ export default function Home() {
       <footer className="px-4 md:px-16 py-2 border-t border-outline-variant bg-surface">
         <div className="max-w-[1280px] mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="flex items-center gap-6">
-            <span className="text-label-sm text-outline">© 2024 PIVOT INSTITUTIONAL</span>
+            <span className="text-label-sm text-outline">© {new Date().getFullYear()} PIVOT INSTITUTIONAL</span>
             <span className="text-label-sm text-outline">SEC/FINRA REGISTERED</span>
           </div>
           <div className="flex gap-4">
-            <a className="text-label-sm text-outline hover:text-primary transition-colors uppercase tracking-widest" href="#">Legal</a>
-            <a className="text-label-sm text-outline hover:text-primary transition-colors uppercase tracking-widest" href="#">Privacy</a>
-            <a className="text-label-sm text-outline hover:text-primary transition-colors uppercase tracking-widest" href="#">Security</a>
+            <a className="text-label-sm text-outline hover:text-primary transition-colors uppercase tracking-widest cursor-pointer" onClick={() => alert('Legal information coming soon.')}>Legal</a>
+            <a className="text-label-sm text-outline hover:text-primary transition-colors uppercase tracking-widest cursor-pointer" onClick={() => alert('Privacy policy coming soon.')}>Privacy</a>
+            <a className="text-label-sm text-outline hover:text-primary transition-colors uppercase tracking-widest cursor-pointer" onClick={() => alert('Security information coming soon.')}>Security</a>
           </div>
         </div>
       </footer>

@@ -17,41 +17,33 @@ export async function GET() {
     try {
       cachedData = await redis.get(cacheKey);
       if(cachedData){
-        console.log("Serving from Redis cache");
         return NextResponse.json(JSON.parse(cachedData));
       }
-    } catch (redisErr) {
-      console.log("Redis not available, skipping cache:", redisErr);
+    } catch {
+      // Redis unavailable, skip cache
     }
-
-    console.log("Fetching data from DB")
 
     const result = await pool.query(
       'SELECT symbol FROM watchlist WHERE user_id = $1 ORDER BY added_at ASC',
       [userId]
     );
 
-    console.log("query result: ", result.rows)
-
     try {
       await redis.set(cacheKey, JSON.stringify(result.rows),{
         EX: DEFAULT_EXPIRATION,
       });
-    } catch (redisErr) {
-      console.log("Redis not available, skipping cache write:", redisErr);
+    } catch {
+      // Redis unavailable, skip cache write
     }
-
 
     return NextResponse.json(result.rows);
 
-  }catch(e){
-    console.log(e)
+  } catch {
     return NextResponse.json({
       error: "Failed to get data from database. Server Error",
     }, {status: 500 })
-
-    }
   }
+}
 
 export async function POST(req: Request) {
   const user = await getCurrentUser();
@@ -97,8 +89,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ success: true });
 
-  }catch(e){
-    console.log(e)
+  } catch {
     return NextResponse.json({ error: "Server Error" }, {status: 500})
   }
 }
@@ -123,12 +114,9 @@ export async function DELETE(req: Request) {
     if (cached) {
       const watchlist = JSON.parse(cached);
 
-      // check if symbol in the watchlist if true filter out symbol
       const updated = watchlist.filter(
         (item: { symbol: string }) => item.symbol !== upperSymbol
       );
-      console.log("Removed data from Redis cache")
-
       await redis.set(cacheKey, JSON.stringify(updated), {
         EX: DEFAULT_EXPIRATION,
       });
@@ -137,8 +125,7 @@ export async function DELETE(req: Request) {
     }
 
     return NextResponse.json({ success: true });
-  }catch(e){
-    console.log(e)
+  } catch {
     return NextResponse.json({ error: "Server Error" }, {status: 500})
   }
 }

@@ -25,6 +25,10 @@ out/
 # MacOS files
 .DS_Store
 
+# TypeScript
+tsconfig.tsbuildinfo
+*.tsbuildinfo
+
 # Optional: Yarn / npm lock files if you don't want to commit
 # package-lock.json
 # yarn.lock

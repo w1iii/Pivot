@@ -28,7 +28,8 @@ export async function rateLimit(
       remaining: Math.max(0, maxRequests - current),
       resetIn: ttl > 0 ? ttl : interval,
     };
-  } catch {
+  } catch (err) {
+    console.error('Rate limit check failed (Redis may be down):', err);
     return { allowed: true, remaining: 1, resetIn: interval };
   }
 }

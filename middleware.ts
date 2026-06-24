@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { getCurrentUser } from './app/lib/auth/jwt';
 
-const protectedRoutes = ['/dashboard', '/profile', '/settings'];
+const protectedRoutes = ['/dashboard', '/profile', '/settings', '/support'];
 const authRoutes = ['/', '/login', '/signup'];
 
 export async function middleware(request: NextRequest) {
